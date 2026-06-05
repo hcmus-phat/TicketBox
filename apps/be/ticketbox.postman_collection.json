@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "75b17bdb-f1c5-4d8c-bc2d-9fbff4d69a01",
     "name": "TicketBox Backend",
-    "description": "Postman collection for the current NestJS backend endpoints. Default baseUrl is http://localhost:3001. Run `npm run dev` before testing. Auth handles account registration/login flows; User handles user/profile management.",
+    "description": "Postman collection for the NestJS backend endpoints currently registered in src/app.module.ts: Health and Auth. Default baseUrl is http://localhost:3001. Run the backend before testing. Use Register first to generate a test account, then Login, Profile, Refresh, and Logout.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -15,16 +15,23 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('status code is 200', function () {",
                   "  pm.response.to.have.status(200);",
                   "});",
                   "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('response is wrapped by interceptor', function () {",
+                  "  pm.expect(json).to.have.property('statusCode', 200);",
+                  "  pm.expect(json).to.have.property('data');",
+                  "});",
+                  "",
                   "pm.test('health status is ok', function () {",
-                  "  pm.expect(pm.response.json()).to.eql({ status: 'ok' });",
+                  "  pm.expect(json.data).to.eql({ status: 'ok' });",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -39,7 +46,8 @@
               "path": [
                 "health"
               ]
-            }
+            },
+            "description": "Checks the backend health endpoint from AppController."
           },
           "response": []
         }
@@ -47,27 +55,48 @@
     },
     {
       "name": "Auth",
+      "description": "AuthModule endpoints from src/routes/auth/auth.controller.ts. Refresh token is stored as an httpOnly cookie named refreshToken on /auth/refresh.",
       "item": [
         {
-          "name": "POST /auth/register - Register account",
+          "name": "POST /auth/register - Register test account",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('testEmail', `ticketbox.user.${timestamp}@example.com`);",
+                  "pm.collectionVariables.set('testPhone', `09${String(timestamp).slice(-8)}`);",
+                  "pm.collectionVariables.set('testPassword', 'password123');",
+                  "pm.collectionVariables.set('testFullName', 'TicketBox Test User');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('status code is 201 or 409', function () {",
-                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "pm.test('status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
                   "});",
                   "",
-                  "if (pm.response.code === 201) {",
-                  "  const user = pm.response.json();",
-                  "  pm.collectionVariables.set('userId', user.id);",
-                  "  pm.test('registered user has email', function () {",
-                  "    pm.expect(user.email).to.eql('new.user@ticketbox.local');",
-                  "  });",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "const json = pm.response.json();",
+                  "const user = json.data;",
+                  "",
+                  "pm.test('registered user is returned', function () {",
+                  "  pm.expect(user).to.have.property('id');",
+                  "  pm.expect(user.email).to.eql(pm.collectionVariables.get('testEmail'));",
+                  "});",
+                  "",
+                  "pm.test('registered user has customer role', function () {",
+                  "  pm.expect(user.roles).to.be.an('array');",
+                  "  pm.expect(user.roles.map((role) => role.name)).to.include('customer');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('userId', user.id);"
+                ]
               }
             }
           ],
@@ -81,7 +110,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"new.user@ticketbox.local\",\n  \"phone\": \"0900000005\",\n  \"password\": \"password123\",\n  \"fullName\": \"New User\",\n  \"status\": \"ACTIVE\"\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"password\": \"{{testPassword}}\",\n  \"fullName\": \"{{testFullName}}\",\n  \"status\": \"ACTIVE\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
@@ -93,151 +122,43 @@
                 "register"
               ]
             },
-            "description": "Registers a new account. Client sends `password`; the backend hashes it into `passwordHash`."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "User",
-      "item": [
-        {
-          "name": "GET /user - List users",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('status code is 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('response is an array', function () {",
-                  "  pm.expect(pm.response.json()).to.be.an('array');",
-                  "});",
-                  "",
-                  "const users = pm.response.json();",
-                  "if (users.length > 0) {",
-                  "  const preferred = users.find((user) => user.email === 'customer@ticketbox.local') || users[0];",
-                  "  pm.collectionVariables.set('userId', preferred.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/user",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "user"
-              ]
-            },
-            "description": "Lists users from Prisma. If seeded data exists, this request stores customer@ticketbox.local or the first returned user into the collection variable `userId`."
+            "description": "Creates a unique test user each time this request runs. The pre-request script updates testEmail/testPhone/testPassword/testFullName collection variables."
           },
           "response": []
         },
         {
-          "name": "GET /user/:id - Get user by id",
+          "name": "POST /auth/login - Login and save access token",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test('status code is 200 or 404', function () {",
-                  "  pm.expect([200, 404]).to.include(pm.response.code);",
-                  "});",
-                  "",
-                  "if (pm.response.code === 200) {",
-                  "  pm.test('response user id matches variable', function () {",
-                  "    pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('userId'));",
-                  "  });",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/user/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "user",
-                "{{userId}}"
-              ]
-            },
-            "description": "Run `GET /user - List users` first so `userId` is set."
-          },
-          "response": []
-        },
-        {
-          "name": "PATCH /user/:id - Update user",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('status code is 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('fullName was updated', function () {",
-                  "  pm.expect(pm.response.json().fullName).to.eql('Customer Demo Updated');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Customer Demo Updated\",\n  \"phone\": \"0900000999\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/user/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "user",
-                "{{userId}}"
-              ]
-            },
-            "description": "Updates the user stored in `userId`. Run `GET /user - List users` first."
-          },
-          "response": []
-        },
-        {
-          "name": "POST /user - Create managed user",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('status code is 201', function () {",
                   "  pm.response.to.have.status(201);",
-                  "});"
-                ],
-                "type": "text/javascript"
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const data = json.data || json;",
+                  "const accessToken = data && data.accessToken;",
+                  "",
+                  "pm.test('login returns user and access token', function () {",
+                  "  pm.expect(data).to.have.property('user');",
+                  "  pm.expect(data).to.have.property('accessToken');",
+                  "  pm.expect(data.user.email).to.eql(pm.collectionVariables.get('testEmail'));",
+                  "});",
+                  "",
+                  "pm.test('login user has customer role', function () {",
+                  "  pm.expect(data.user.roles).to.be.an('array');",
+                  "  pm.expect(data.user.roles.map((role) => role.name)).to.include('customer');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('accessToken', accessToken);",
+                  "if (pm.environment.name) {",
+                  "  pm.environment.set('accessToken', accessToken);",
+                  "}",
+                  "pm.collectionVariables.set('userId', data.user.id);"
+                ]
               }
             }
           ],
@@ -251,50 +172,259 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"managed.user@ticketbox.local\",\n  \"phone\": \"0900000006\",\n  \"fullName\": \"Managed User\",\n  \"status\": \"ACTIVE\"\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/user",
+              "raw": "{{baseUrl}}/auth/login",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "user"
+                "auth",
+                "login"
               ]
             },
-            "description": "Creates a user/profile record without account password. Registration belongs to `POST /auth/register`."
+            "description": "Logs in with the account created by Register. Saves accessToken and userId as collection variables. Postman should also keep the refreshToken cookie returned by the server."
           },
           "response": []
         },
         {
-          "name": "DELETE /user/:id - Delete user",
+          "name": "GET /auth/profile - Current user",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const accessToken = pm.collectionVariables.get('accessToken') || pm.environment.get('accessToken') || pm.variables.get('accessToken');",
+                  "",
+                  "if (!accessToken) {",
+                  "  throw new Error('Missing accessToken. Run POST /auth/login first.');",
+                  "}",
+                  "",
+                  "pm.request.headers.upsert({",
+                  "  key: 'Authorization',",
+                  "  value: `Bearer ${accessToken}`",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('status code is 200', function () {",
                   "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const user = pm.response.json().data;",
+                  "",
+                  "pm.test('profile matches logged in user', function () {",
+                  "  pm.expect(user).to.have.property('id', pm.collectionVariables.get('userId'));",
+                  "  pm.expect(user).to.have.property('email', pm.collectionVariables.get('testEmail'));",
+                  "});",
+                  "",
+                  "pm.test('profile returns roles', function () {",
+                  "  pm.expect(user.roles).to.be.an('array');",
+                  "  pm.expect(user.roles.map((role) => role.name)).to.include('customer');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
           "request": {
-            "method": "DELETE",
+            "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/user/{{userId}}",
+              "raw": "{{baseUrl}}/auth/profile",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "user",
-                "{{userId}}"
+                "auth",
+                "profile"
               ]
             },
-            "description": "Deletes the user stored in `userId`. Use carefully because it removes real database data."
+            "description": "Requires Authorization: Bearer {{accessToken}} from Login or Refresh."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/refresh - Rotate tokens",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const data = pm.response.json().data;",
+                  "const accessToken = data && data.accessToken;",
+                  "",
+                  "pm.test('refresh returns a new access token', function () {",
+                  "  pm.expect(data).to.have.property('accessToken');",
+                  "  pm.expect(data).to.have.property('user');",
+                  "});",
+                  "",
+                  "pm.test('refresh user has roles', function () {",
+                  "  pm.expect(data.user.roles).to.be.an('array');",
+                  "  pm.expect(data.user.roles.map((role) => role.name)).to.include('customer');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('accessToken', accessToken);",
+                  "if (pm.environment.name) {",
+                  "  pm.environment.set('accessToken', accessToken);",
+                  "}",
+                  "pm.collectionVariables.set('userId', data.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Uses the httpOnly refreshToken cookie set by Login. Run Login first in the same Postman client/session."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/logout - Clear refresh cookie",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const data = pm.response.json().data;",
+                  "",
+                  "pm.test('logout message returned', function () {",
+                  "  pm.expect(data).to.have.property('message', 'Logged out successfully');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.unset('accessToken');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Clears the refreshToken cookie and removes accessToken from collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/login - Invalid password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status code is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('error response shape is returned', function () {",
+                  "  pm.expect(json).to.have.property('success', false);",
+                  "  pm.expect(json).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"wrong-password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Negative test for invalid credentials. Run Register first so testEmail exists."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /auth/profile - Missing token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status code is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('unauthorized error shape is returned', function () {",
+                  "  pm.expect(json).to.have.property('success', false);",
+                  "  pm.expect(json.metadata).to.have.property('path', '/auth/profile');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ]
+            },
+            "description": "Negative test for protected route without Authorization header."
           },
           "response": []
         }
@@ -304,11 +434,36 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "testEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testPhone",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testPassword",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "testFullName",
+      "value": "TicketBox Test User",
       "type": "string"
     },
     {
       "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
       "value": "",
       "type": "string"
     }

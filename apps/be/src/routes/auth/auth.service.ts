@@ -1,11 +1,13 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { Prisma } from '../../generated/prisma';
+import { Prisma, ScopeType } from '../../generated/prisma';
 import { HashService } from '../../common/crypto/hash.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { TokenService } from './token/token.service';
 import { LoginDto } from './dto/login.dto';
-import { JwtPayload } from '../../common/types/jwt-payload.type';
+import { JwtPayload } from './types/jwt-payload.type';
+import { authUserInclude } from './types/auth-user.types';
+import { UserResponseDto } from './dto/user-response.dto';
 
 
 @Injectable()
@@ -19,19 +21,28 @@ export class AuthService {
     const { password, ...userData } = registerDto;
     const passwordHash = await this.hashService.hashPassword(password);
     try {
-      return await this.prismaService.user.create({
+      const user = await this.prismaService.user.create({
         data: {
           ...userData,
           password: passwordHash,
+          roles: {
+            create: {
+              scopeType: ScopeType.GLOBAL,
+              role: {
+                connectOrCreate: {
+                  where: { name: 'customer' },
+                  create: { name: 'customer' },
+                },
+              },
+            },
+          },
         },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          fullName: true,
-          status: true,
-        }, 
+        include: authUserInclude,
+        omit: {
+          password: true,
+        },
       });
+      return new UserResponseDto(user);
     } catch (error: any) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException('Email already exists');
@@ -41,24 +52,22 @@ export class AuthService {
   }
   async login(body: LoginDto) {
     const { email, password } = body;
-    const user = await this.prismaService.user.findUnique({ where: { email } });
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+      include: authUserInclude,
+    });
     if (!user || password === undefined || user.password === null) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    const isPasswordValid = await this.hashService.comparePassword(password, user.password);
+    const { password: userPassword, ...authUser } = user;
+    const isPasswordValid = await this.hashService.comparePassword(password, userPassword);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    const payload: JwtPayload = { sub: user.id, email: user.email };
+    const payload: JwtPayload = { sub: authUser.id, email: authUser.email };
     const token = await this.generateTokens(payload);
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        phone: user.phone,
-        fullName: user.fullName,
-        status: user.status,
-      },
+      user: new UserResponseDto(authUser),
       ...token,
     };
   }
@@ -76,12 +85,9 @@ export class AuthService {
 
     const user = await this.prismaService.user.findUnique({
       where: { id: payload.sub },
-      select: {
-        id: true,
-        email: true,
-        phone: true,
-        fullName: true,
-        status: true,
+      include: authUserInclude,
+      omit: {
+        password: true,
       },
     });
 
@@ -97,7 +103,7 @@ export class AuthService {
     const token = await this.generateTokens(tokenPayload);
 
     return {
-      user,
+      user: new UserResponseDto(user),
       ...token,
     };
   }

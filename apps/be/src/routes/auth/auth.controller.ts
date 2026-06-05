@@ -5,7 +5,8 @@ import { LoginDto } from './dto/login.dto';
 import { CookieOptions, Request, Response } from 'express';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { AuthUser } from '../../common/types/jwt-payload.type';
+import { AuthUser } from './dto/user-response.dto';
+
 
 @Controller('auth')
 export class AuthController {
@@ -17,7 +18,7 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() body: LoginDto, @Res({passthrough: true}) res: Response) {
+  async login(@Body() body: LoginDto, @Res({passthrough: true }) res: Response) {
     const result = await this.authService.login(body);
 
     this.setRefreshTokenCookie(res, result.refreshToken);
@@ -49,6 +50,20 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getProfile(@CurrentUser() user: AuthUser) {
     return user;
+  }
+
+  @Post('logout')
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('refreshToken', {
+      path: '/auth/refresh',
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    return {
+      message: 'Logged out successfully',
+    };
   }
 
   private setRefreshTokenCookie(res: Response, refreshToken: string) {

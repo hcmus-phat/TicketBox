@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { JwtPayload } from '../../../common/types/jwt-payload.type';
+
+import { UserResponseDto } from '../dto/user-response.dto';
+import { authUserInclude } from '../types/auth-user.types';
+import { JwtPayload } from '../types/jwt-payload.type';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -27,12 +30,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       where: {
         id: payload.sub,
       },
-      select: {
-        id: true,
-        email: true,
-        phone: true,
-        fullName: true,
-        status: true,
+      include: authUserInclude,
+      omit: {
+        password: true,
       },
     });
 
@@ -44,6 +44,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('User is not active');
     }
 
-    return user;
+    return new UserResponseDto(user);
   }
 }
