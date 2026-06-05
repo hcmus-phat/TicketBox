@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { validate } from './config/env.validation';
 import { AuthModule } from './routes/auth/auth.module';
+import { ConcertModule } from './routes/concert/concert.module';
 import jwtConfig from './config/jwt.config';
 import databaseConfig from './config/database.config';
  
@@ -15,7 +16,7 @@ import databaseConfig from './config/database.config';
     validate,
     load: [databaseConfig, jwtConfig],
   }),
-  PrismaModule, AuthModule],
+  PrismaModule, AuthModule, ConcertModule],
   controllers: [AppController],
   providers: [AppService],
 })
