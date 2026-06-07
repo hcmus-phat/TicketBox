@@ -24,12 +24,12 @@ Scope: user-facing frontend only. Current implementation should continue using m
 - [x] Header: theme toggle works with persisted `localStorage` theme.
 - [x] Concert cards: make favorite action work without accidentally navigating to detail.
 - [x] Concert detail page: load mock concert, zones, and seats by concert id.
-- [ ] Seat selection flow: create a mock draft reservation and carry it into checkout.
-- [ ] Checkout page: read selected reservation, choose payment method, and validate payment form basics.
-- [ ] Checkout submit: create a mock order and navigate to success by order id.
+- [x] Seat selection flow: create a mock draft reservation and carry it into checkout.
+- [x] Checkout page: read selected reservation, choose payment method, and validate payment form basics.
+- [x] Checkout submit: create a mock order and navigate to success by order id.
 - [ ] Success/e-ticket page: render the selected mock order and tickets, including download/share mock behavior.
-- [ ] Footer/static links: replace placeholder `#` links with real routes or intentional disabled/placeholder states.
 - [ ] Verify user flow end to end: home -> concert detail -> seat selection -> checkout -> success.
+- [ ] Footer/static links: replace placeholder `#` links with real routes or intentional disabled/placeholder states.
 
 ## Backend Reference
 

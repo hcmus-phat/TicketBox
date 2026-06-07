@@ -74,7 +74,7 @@ export default async function ConcertDetailPage({ params }: ConcertDetailPagePro
           </div>
         </div>
 
-        <SeatMap concertTitle={concert.title} zones={concertZones} seats={concertSeats} />
+        <SeatMap concertId={concert.id} concertTitle={concert.title} zones={concertZones} seats={concertSeats} />
       </section>
 
       <Footer />
