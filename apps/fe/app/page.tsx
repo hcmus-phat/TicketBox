@@ -1,6 +1,7 @@
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { ConcertBrowser } from '@/components/concert-browser';
+import { NewsletterSignup } from '@/components/newsletter-signup';
 import { concerts } from '@/lib/mock-data';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -91,17 +92,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <h2 className="max-w-xl text-3xl font-black tracking-tight md:text-4xl">Nhận thông báo khi show mới mở bán</h2>
             <p className="mt-3 max-w-lg text-background/65">Theo dõi lịch mở bán theo nghệ sĩ và thành phố bạn quan tâm.</p>
           </div>
-          <div className="flex flex-col gap-3 self-center sm:flex-row">
-            <input
-              type="email"
-              placeholder="email@example.com"
-              aria-label="Email nhận thông báo"
-              className="min-h-12 flex-1 rounded-full border border-white/15 bg-white/10 px-5 text-background placeholder:text-background/45 focus:outline-none focus:ring-4 focus:ring-primary/30"
-            />
-            <button className="min-h-12 rounded-full bg-primary px-6 font-bold text-primary-foreground transition hover:bg-primary/90 active:translate-y-px">
-              Đăng ký
-            </button>
-          </div>
+          <NewsletterSignup />
         </div>
       </section>
 

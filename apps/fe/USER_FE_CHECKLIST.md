@@ -7,7 +7,7 @@ Scope: user-facing frontend only. Current implementation should continue using m
 - The user pages still use mock data from `lib/mock-data.ts`; no backend API calls are expected yet.
 - The refreshed home page now has working hero links: featured concert and `#events`.
 - `ThemeToggle` exists and persists the selected theme in `localStorage`.
-- Header notifications, account, favorites, newsletter signup, checkout submit, ticket download/share, and footer links are still UI-only.
+- Favorites, checkout submit, ticket download/share, and footer links are still UI-only.
 - Concert detail still uses shared global `ticketZones` and `seats`, not data scoped by concert id.
 - Vietnamese UI strings were verified with UTF-8 reads; earlier mojibake was terminal output rendering, not source corruption.
 
@@ -17,9 +17,10 @@ Scope: user-facing frontend only. Current implementation should continue using m
 - [x] Standardize user mock data around backend-like concepts: concerts, ticket types, seat zones, reservations, orders, tickets.
 - [x] Home page: hero CTAs link to featured show and event list.
 - [x] Home page: support searching/filtering concerts from mock data.
-- [ ] Home page: implement newsletter/signup mock behavior.
+- [x] Home page: implement newsletter/signup mock behavior.
 - [x] Header: navbar search submits to the home event browser with `?q=...`.
-- [ ] Header: add clear mock behavior for account and notifications.
+- [x] Header: add clear mock behavior for account and notifications.
+- [x] Auth pages: add mock login/register flows using localStorage and backend-like auth shape.
 - [x] Header: theme toggle works with persisted `localStorage` theme.
 - [ ] Concert cards: make favorite action work without accidentally navigating to detail.
 - [ ] Concert detail page: load mock concert, zones, and seats by concert id.

@@ -28,25 +28,64 @@ function normalize(value: string) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
+function scrollToEvents() {
+  requestAnimationFrame(() => {
+    document.getElementById('events')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  });
+}
+
 export function ConcertBrowser({ concerts, initialKeyword = '' }: ConcertBrowserProps) {
   const [keyword, setKeyword] = useState(initialKeyword);
   const [city, setCity] = useState('all');
   const [genre, setGenre] = useState('all');
 
   useEffect(() => {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    const isReload = navigation?.type === 'reload';
+
+    if (isReload) {
+      setKeyword('');
+      setCity('all');
+      setGenre('all');
+
+      if (window.location.search || window.location.hash) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('q');
+        url.hash = '';
+        window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+      }
+
+      return;
+    }
+
     setKeyword(initialKeyword);
 
     if (initialKeyword.trim().length === 0) {
       return;
     }
 
-    requestAnimationFrame(() => {
-      document.getElementById('events')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    });
+    scrollToEvents();
   }, [initialKeyword]);
+
+  useEffect(() => {
+    function handleNavbarSearch(event: Event) {
+      const query = (event as CustomEvent<{ query?: string }>).detail?.query ?? '';
+
+      setKeyword(query);
+      setCity('all');
+      setGenre('all');
+      scrollToEvents();
+    }
+
+    window.addEventListener('ticketbox-navbar-search', handleNavbarSearch);
+
+    return () => {
+      window.removeEventListener('ticketbox-navbar-search', handleNavbarSearch);
+    };
+  }, []);
 
   const cities = useMemo(
     () => Array.from(new Set(concerts.map((concert) => concert.city))).sort(),
