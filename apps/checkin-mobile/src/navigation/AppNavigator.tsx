@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { COLORS, FONT_SIZES } from '../constants/theme';
+import { COLORS, FONT_SIZES, SPACING } from '../constants/theme';
 import type { RootStackParamList } from '../types';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -18,14 +18,32 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const navigationTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: COLORS.background,
+    card: COLORS.backgroundSecondary,
+    primary: COLORS.primary,
+    text: COLORS.text,
+    border: COLORS.border,
+  },
+};
+
 const screenOptions = {
   headerStyle: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.backgroundSecondary,
   },
   headerTintColor: COLORS.text,
   headerTitleStyle: {
     fontWeight: '600' as const,
     fontSize: FONT_SIZES.lg,
+  },
+  headerShadowVisible: false,
+  headerBackTitle: '',
+  headerTitleAlign: 'left' as const,
+  headerTitleContainerStyle: {
+    paddingLeft: SPACING.xs,
   },
   contentStyle: {
     backgroundColor: COLORS.background,
@@ -34,7 +52,7 @@ const screenOptions = {
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={screenOptions}
@@ -48,7 +66,7 @@ export default function AppNavigator() {
           name="Scanner"
           component={ScannerScreen}
           options={{
-            title: '📷 Quét vé',
+            title: 'Quét vé',
             headerBackVisible: false,
           }}
         />
@@ -60,17 +78,17 @@ export default function AppNavigator() {
         <Stack.Screen
           name="OfflineQueue"
           component={OfflineQueueScreen}
-          options={{ title: '📋 Offline Queue' }}
+          options={{ title: 'Hàng đợi offline' }}
         />
         <Stack.Screen
           name="SyncHistory"
           component={SyncHistoryScreen}
-          options={{ title: '🔄 Lịch sử Sync' }}
+          options={{ title: 'Lịch sử đồng bộ' }}
         />
         <Stack.Screen
           name="Settings"
           component={SettingsScreen}
-          options={{ title: '⚙️ Cài đặt' }}
+          options={{ title: 'Cài đặt' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

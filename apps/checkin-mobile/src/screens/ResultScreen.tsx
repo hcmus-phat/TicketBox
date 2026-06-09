@@ -12,7 +12,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -24,31 +26,31 @@ type ResultRouteProp = RouteProp<RootStackParamList, 'Result'>;
 
 const STATUS_CONFIG: Record<
   ScanStatus,
-  { label: string; icon: string; color: string; bgColor: string }
+  { label: string; code: string; color: string; bgColor: string }
 > = {
   SUCCESS: {
     label: 'Check-in thành công',
-    icon: '✅',
+    code: 'OK',
     color: COLORS.success,
-    bgColor: '#00B89420',
+    bgColor: '#16C78418',
   },
   DUPLICATE: {
     label: 'Vé đã được check-in',
-    icon: '⚠️',
+    code: '2X',
     color: COLORS.warning,
-    bgColor: '#FDCB6E20',
+    bgColor: '#F8B84E18',
   },
   NOT_FOUND: {
     label: 'Vé không tồn tại',
-    icon: '❌',
+    code: 'NO',
     color: COLORS.error,
-    bgColor: '#E74C3C20',
+    bgColor: '#FF4D5E18',
   },
   WRONG_EVENT: {
     label: 'Vé sai sự kiện',
-    icon: '🚫',
+    code: 'EV',
     color: COLORS.errorDark,
-    bgColor: '#C0392B20',
+    bgColor: '#C8283A18',
   },
 };
 
@@ -61,54 +63,70 @@ export default function ResultScreen() {
   const checkinTime = new Date(ticket.checkedInAt).toLocaleString('vi-VN');
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      {/* Offline Badge */}
-      {isOffline && (
-        <View style={styles.offlineBadge}>
-          <Text style={styles.offlineDot}>🔴</Text>
-          <Text style={styles.offlineText}>Offline – sẽ tự động sync</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {isOffline && (
+          <View style={styles.offlineBadge}>
+            <View style={styles.offlineDot} />
+            <Text style={styles.offlineText}>Offline - sẽ tự động sync</Text>
+          </View>
+        )}
+
+        <View style={[styles.statusBanner, { backgroundColor: config.bgColor }]}>
+          <View style={styles.statusTop}>
+            <View style={[styles.statusIcon, { backgroundColor: config.color }]}>
+              <Text style={styles.statusIconText}>{config.code}</Text>
+            </View>
+            <View style={styles.statusCopy}>
+              <Text style={[styles.statusLabel, { color: config.color }]}>
+                {config.label}
+              </Text>
+              <Text style={styles.statusHint}>
+                {ticket.status === 'SUCCESS'
+                  ? 'Cho khách vào cổng'
+                  : 'Giữ khách tại quầy hỗ trợ'}
+              </Text>
+            </View>
+          </View>
         </View>
-      )}
 
-      {/* Status Banner */}
-      <View style={[styles.statusBanner, { backgroundColor: config.bgColor }]}>
-        <Text style={styles.statusIcon}>{config.icon}</Text>
-        <Text style={[styles.statusLabel, { color: config.color }]}>
-          {config.label}
-        </Text>
-      </View>
+        <View style={styles.ticketHeader}>
+          <Text style={styles.ticketName}>{ticket.guestName}</Text>
+          <View style={styles.ticketTypeBadge}>
+            <Text style={styles.ticketTypeText}>{ticket.ticketType}</Text>
+          </View>
+        </View>
 
-      {/* Ticket Details */}
-      <View style={styles.detailsCard}>
-        <DetailRow label="Tên khách" value={ticket.guestName} />
-        <DetailRow label="Loại vé" value={ticket.ticketType} highlight />
-        <DetailRow label="Mã vé" value={ticket.ticketCode} mono />
-        <DetailRow label="Concert" value={ticket.concertName} />
-        <DetailRow label="Thời gian check-in" value={checkinTime} />
-      </View>
+        <View style={styles.detailsCard}>
+          <DetailRow label="Mã vé" value={ticket.ticketCode} mono />
+          <DetailRow label="Concert" value={ticket.concertName} />
+          <DetailRow label="Thời gian check-in" value={checkinTime} />
+        </View>
 
-      {/* Action Buttons */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.scanAgainButton}
-          onPress={() => navigation.navigate('Scanner')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.scanAgainIcon}>📷</Text>
-          <Text style={styles.scanAgainText}>Quét tiếp</Text>
-        </TouchableOpacity>
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.scanAgainButton}
+            onPress={() => navigation.navigate('Scanner')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.scanAgainText}>Quét vé tiếp theo</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.queueButton}
-          onPress={() => navigation.navigate('OfflineQueue')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.queueButtonText}>Xem Offline Queue</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <TouchableOpacity
+            style={styles.queueButton}
+            onPress={() => navigation.navigate('OfflineQueue')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.queueButtonText}>Xem hàng đợi offline</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -143,7 +161,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  content: {
     paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xxl,
   },
   offlineBadge: {
     flexDirection: 'row',
@@ -155,7 +177,10 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
   },
   offlineDot: {
-    fontSize: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.error,
     marginRight: SPACING.xs,
   },
   offlineText: {
@@ -164,49 +189,91 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statusBanner: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xxxl,
-    borderRadius: BORDER_RADIUS.lg,
-    marginTop: SPACING.xl,
-  },
-  statusIcon: {
-    fontSize: 56,
-  },
-  statusLabel: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: '700',
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
     marginTop: SPACING.md,
-  },
-  detailsCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.xl,
-    marginTop: SPACING.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  detailRow: {
+  statusTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  statusIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: BORDER_RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.lg,
+  },
+  statusIconText: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.xl,
+    fontWeight: '900',
+  },
+  statusLabel: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: '800',
+  },
+  statusHint: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZES.md,
+    marginTop: SPACING.sm,
+  },
+  statusCopy: {
+    flex: 1,
+  },
+  ticketHeader: {
+    marginTop: SPACING.xxl,
+    paddingBottom: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  ticketName: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.title,
+    fontWeight: '900',
+  },
+  ticketTypeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.info + '16',
+    borderWidth: 1,
+    borderColor: COLORS.info + '55',
+    borderRadius: BORDER_RADIUS.round,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    marginTop: SPACING.md,
+  },
+  ticketTypeText: {
+    color: COLORS.info,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '900',
+  },
+  detailsCard: {
+    paddingVertical: SPACING.sm,
+    marginTop: SPACING.xl,
+  },
+  detailRow: {
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
   detailLabel: {
     color: COLORS.textSecondary,
-    fontSize: FONT_SIZES.md,
-    flex: 1,
+    fontSize: FONT_SIZES.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: SPACING.xs,
   },
   detailValue: {
     color: COLORS.text,
-    fontSize: FONT_SIZES.md,
+    fontSize: FONT_SIZES.lg,
     fontWeight: '500',
-    flex: 1.5,
-    textAlign: 'right',
+    lineHeight: 24,
   },
   detailHighlight: {
-    color: COLORS.primary,
+    color: COLORS.info,
     fontWeight: '700',
   },
   detailMono: {
@@ -222,22 +289,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: COLORS.primary,
     paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scanAgainIcon: {
-    fontSize: 18,
-    marginRight: SPACING.sm,
-  },
   scanAgainText: {
-    color: COLORS.text,
+    color: COLORS.background,
     fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   queueButton: {
     paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,

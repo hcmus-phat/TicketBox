@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONT_SIZES, SPACING, BORDER_RADIUS } from '../constants/theme';
 import type { OfflineQueueItem, SyncStatus } from '../types';
 
@@ -96,10 +97,10 @@ const MOCK_QUEUE: OfflineQueueItem[] = [
   },
 ];
 
-const STATUS_ICON: Record<SyncStatus, { icon: string; color: string }> = {
-  PENDING: { icon: '🕐', color: COLORS.warning },
-  SYNCED: { icon: '✅', color: COLORS.success },
-  FAILED: { icon: '❌', color: COLORS.error },
+const STATUS_ICON: Record<SyncStatus, { code: string; color: string; label: string }> = {
+  PENDING: { code: 'WAIT', color: COLORS.warning, label: 'Chờ sync' },
+  SYNCED: { code: 'OK', color: COLORS.success, label: 'Đã sync' },
+  FAILED: { code: 'FAIL', color: COLORS.error, label: 'Thất bại' },
 };
 
 export default function OfflineQueueScreen() {
@@ -136,7 +137,11 @@ export default function OfflineQueueScreen() {
     return (
       <View style={styles.queueItem}>
         <View style={styles.queueItemLeft}>
-          <Text style={styles.queueIcon}>{statusCfg.icon}</Text>
+          <View style={[styles.queueCode, { backgroundColor: statusCfg.color + '20' }]}>
+            <Text style={[styles.queueCodeText, { color: statusCfg.color }]}>
+              {statusCfg.code}
+            </Text>
+          </View>
         </View>
         <View style={styles.queueItemCenter}>
           <Text style={styles.ticketCode}>{item.ticketCode}</Text>
@@ -147,7 +152,7 @@ export default function OfflineQueueScreen() {
         </View>
         <View style={styles.queueItemRight}>
           <Text style={[styles.statusBadge, { color: statusCfg.color }]}>
-            {item.syncStatus}
+            {statusCfg.label}
           </Text>
           <Text style={styles.attemptText}>
             {item.syncAttempts} lần thử
@@ -158,10 +163,9 @@ export default function OfflineQueueScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      {/* Summary */}
       <View style={styles.summary}>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryCount, { color: COLORS.warning }]}>
@@ -183,7 +187,6 @@ export default function OfflineQueueScreen() {
         </View>
       </View>
 
-      {/* Sync Button */}
       <TouchableOpacity
         style={[styles.syncButton, syncing && styles.syncButtonDisabled]}
         onPress={handleSyncNow}
@@ -196,14 +199,10 @@ export default function OfflineQueueScreen() {
             <Text style={styles.syncButtonText}> Đang sync...</Text>
           </>
         ) : (
-          <>
-            <Text style={styles.syncButtonIcon}>🔄</Text>
-            <Text style={styles.syncButtonText}>Sync ngay</Text>
-          </>
+          <Text style={styles.syncButtonText}>Đồng bộ lại ngay</Text>
         )}
       </TouchableOpacity>
 
-      {/* Queue List */}
       <FlatList
         data={queue}
         keyExtractor={(item) => item.id}
@@ -211,7 +210,7 @@ export default function OfflineQueueScreen() {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -223,13 +222,18 @@ const styles = StyleSheet.create({
   summary: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: SPACING.xl,
-    backgroundColor: COLORS.surface,
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   summaryItem: {
     alignItems: 'center',
+    flex: 1,
   },
   summaryCount: {
     fontSize: FONT_SIZES.xxl,
@@ -245,26 +249,22 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     marginHorizontal: SPACING.xl,
     marginVertical: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   syncButtonDisabled: {
     opacity: 0.7,
   },
-  syncButtonIcon: {
-    fontSize: 16,
-    marginRight: SPACING.sm,
-  },
   syncButtonText: {
-    color: COLORS.text,
+    color: COLORS.background,
     fontSize: FONT_SIZES.md,
     fontWeight: '700',
   },
   list: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xxl,
+    paddingBottom: SPACING.xxxl,
   },
   separator: {
     height: 1,
@@ -273,13 +273,22 @@ const styles = StyleSheet.create({
   queueItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.lg,
+    paddingVertical: SPACING.xl,
+    minHeight: 88,
   },
   queueItemLeft: {
     marginRight: SPACING.md,
   },
-  queueIcon: {
-    fontSize: 22,
+  queueCode: {
+    width: 54,
+    height: 38,
+    borderRadius: BORDER_RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  queueCodeText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '900',
   },
   queueItemCenter: {
     flex: 1,
@@ -287,7 +296,7 @@ const styles = StyleSheet.create({
   ticketCode: {
     color: COLORS.text,
     fontSize: FONT_SIZES.md,
-    fontWeight: '600',
+    fontWeight: '700',
     fontFamily: 'monospace',
   },
   ticketTime: {
@@ -302,6 +311,7 @@ const styles = StyleSheet.create({
   },
   queueItemRight: {
     alignItems: 'flex-end',
+    maxWidth: 86,
   },
   statusBadge: {
     fontSize: FONT_SIZES.xs,

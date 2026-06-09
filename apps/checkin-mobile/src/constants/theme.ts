@@ -4,38 +4,39 @@
  */
 
 export const COLORS = {
-  primary: '#6C5CE7',
-  primaryLight: '#A29BFE',
-  primaryDark: '#4A3DB8',
+  primary: '#12B981',
+  primaryLight: '#7DD3BC',
+  primaryDark: '#047857',
 
-  success: '#00B894',
-  successLight: '#55EFC4',
-  successDark: '#009B7D',
+  success: '#22C55E',
+  successLight: '#86EFAC',
+  successDark: '#15803D',
 
-  error: '#E74C3C',
-  errorLight: '#FF7675',
-  errorDark: '#C0392B',
+  error: '#F43F5E',
+  errorLight: '#FDA4AF',
+  errorDark: '#BE123C',
 
-  warning: '#FDCB6E',
-  warningLight: '#FFEAA7',
-  warningDark: '#E17055',
+  warning: '#F59E0B',
+  warningLight: '#FCD34D',
+  warningDark: '#B45309',
 
-  info: '#74B9FF',
+  info: '#38BDF8',
 
-  background: '#0F0F23',
-  backgroundSecondary: '#1A1A2E',
-  surface: '#16213E',
-  surfaceLight: '#1E2D4D',
+  background: '#09110F',
+  backgroundSecondary: '#0E1916',
+  surface: '#14211E',
+  surfaceLight: '#1B2C28',
+  surfaceRaised: '#233832',
 
-  text: '#FFFFFF',
-  textSecondary: '#A0A0B8',
-  textMuted: '#6C6C80',
+  text: '#F4FBF8',
+  textSecondary: '#B7C9C2',
+  textMuted: '#789189',
 
-  border: '#2A2A3E',
-  borderLight: '#3A3A5E',
+  border: '#243A35',
+  borderLight: '#36544D',
 
-  online: '#00B894',
-  offline: '#E74C3C',
+  online: '#22C55E',
+  offline: '#F43F5E',
 } as const;
 
 export const FONT_SIZES = {
@@ -58,12 +59,13 @@ export const SPACING = {
   xxl: 24,
   xxxl: 32,
   huge: 48,
+  massive: 64,
 } as const;
 
 export const BORDER_RADIUS = {
   sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 20,
+  md: 8,
+  lg: 12,
+  xl: 16,
   round: 9999,
 } as const;

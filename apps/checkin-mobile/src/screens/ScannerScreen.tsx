@@ -14,6 +14,7 @@ import {
   StyleSheet,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS, FONT_SIZES, SPACING, BORDER_RADIUS } from '../constants/theme';
@@ -23,7 +24,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Scanner'>;
 
 const MOCK_CONCERT = {
   id: 'concert-001',
-  name: '🎵 Sơn Tùng M-TP - Sky Tour 2026',
+  name: 'Sơn Tùng M-TP - Sky Tour 2026',
 };
 
 const MOCK_TICKETS: Record<ScanStatus, TicketInfo> = {
@@ -65,11 +66,11 @@ const MOCK_TICKETS: Record<ScanStatus, TicketInfo> = {
   },
 };
 
-const SCAN_BUTTONS: { status: ScanStatus; label: string; color: string; icon: string }[] = [
-  { status: 'SUCCESS', label: 'Scan Hợp lệ', color: COLORS.success, icon: '✅' },
-  { status: 'DUPLICATE', label: 'Vé đã Check-in', color: COLORS.warning, icon: '⚠️' },
-  { status: 'NOT_FOUND', label: 'Vé không tồn tại', color: COLORS.error, icon: '❌' },
-  { status: 'WRONG_EVENT', label: 'Vé sai Concert', color: COLORS.errorDark, icon: '🚫' },
+const SCAN_BUTTONS: { status: ScanStatus; label: string; color: string; tone: string }[] = [
+  { status: 'SUCCESS', label: 'Hợp lệ', color: COLORS.success, tone: 'OK' },
+  { status: 'DUPLICATE', label: 'Đã check-in', color: COLORS.warning, tone: '2X' },
+  { status: 'NOT_FOUND', label: 'Không tồn tại', color: COLORS.error, tone: 'NO' },
+  { status: 'WRONG_EVENT', label: 'Sai sự kiện', color: COLORS.errorDark, tone: 'EV' },
 ];
 
 export default function ScannerScreen() {
@@ -85,73 +86,90 @@ export default function ScannerScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      {/* Concert Info */}
       <View style={styles.concertBanner}>
-        <Text style={styles.concertLabel}>Concert hiện tại</Text>
-        <Text style={styles.concertName}>{MOCK_CONCERT.name}</Text>
+        <View>
+          <Text style={styles.concertLabel}>Cổng đang hoạt động</Text>
+          <Text style={styles.concertName}>{MOCK_CONCERT.name}</Text>
+        </View>
+        <View style={styles.livePill}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>Online</Text>
+        </View>
       </View>
 
-      {/* Mock Camera Frame */}
       <View style={styles.cameraContainer}>
+        <View style={styles.scanHeader}>
+          <Text style={styles.cameraSectionLabel}>Khung quét</Text>
+          <Text style={styles.scanCounter}>128 vào cổng</Text>
+        </View>
         <View style={styles.cameraFrame}>
-          {/* Corner decorations */}
+          <View style={styles.cameraGridLineV} />
+          <View style={styles.cameraGridLineH} />
           <View style={[styles.corner, styles.cornerTL]} />
           <View style={[styles.corner, styles.cornerTR]} />
           <View style={[styles.corner, styles.cornerBL]} />
           <View style={[styles.corner, styles.cornerBR]} />
 
-          <Text style={styles.cameraText}>📷</Text>
-          <Text style={styles.cameraHint}>Camera Preview</Text>
+          <View style={styles.scanLine} />
+          <Text style={styles.cameraText}>Sẵn sàng</Text>
+          <Text style={styles.cameraHint}>Đưa QR vào vùng sáng</Text>
           <Text style={styles.cameraSubHint}>
-            (Tuần 1 – Dùng nút bên dưới để giả lập)
+            Mã hợp lệ sẽ chuyển sang màn hình kết quả ngay lập tức
           </Text>
         </View>
       </View>
 
-      {/* Scan Simulation Buttons */}
       <View style={styles.buttonsContainer}>
-        <Text style={styles.buttonsTitle}>Giả lập kết quả quét mã</Text>
-        {SCAN_BUTTONS.map((btn) => (
-          <TouchableOpacity
-            key={btn.status}
-            style={[styles.scanButton, { backgroundColor: btn.color }]}
-            onPress={() => handleScan(btn.status)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.scanButtonIcon}>{btn.icon}</Text>
-            <Text style={styles.scanButtonText}>{btn.label}</Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.buttonsHeader}>
+          <Text style={styles.buttonsTitle}>Mô phỏng quét</Text>
+          <Text style={styles.buttonsHint}>Chọn trạng thái để test luồng</Text>
+        </View>
+        <View style={styles.buttonGrid}>
+          {SCAN_BUTTONS.map((btn) => (
+            <TouchableOpacity
+              key={btn.status}
+              style={[styles.scanButton, { borderColor: btn.color + '66' }]}
+              onPress={() => handleScan(btn.status)}
+              activeOpacity={0.82}
+            >
+              <View style={[styles.scanTone, { backgroundColor: btn.color + '20' }]}>
+                <Text style={[styles.scanToneText, { color: btn.color }]}>
+                  {btn.tone}
+                </Text>
+              </View>
+              <Text style={styles.scanButtonText}>{btn.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      {/* Bottom nav hints */}
       <View style={styles.bottomNav}>
         <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigation.navigate('OfflineQueue')}
         >
-          <Text style={styles.navIcon}>📋</Text>
+          <Text style={styles.navIcon}>03</Text>
           <Text style={styles.navLabel}>Queue</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigation.navigate('SyncHistory')}
         >
-          <Text style={styles.navIcon}>🔄</Text>
+          <Text style={styles.navIcon}>OK</Text>
           <Text style={styles.navLabel}>Sync</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={styles.navIcon}>⚙️</Text>
+          <Text style={styles.navIcon}>ID</Text>
           <Text style={styles.navLabel}>Cài đặt</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -161,9 +179,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   concertBanner: {
-    backgroundColor: COLORS.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -171,66 +191,132 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: FONT_SIZES.xs,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   concertName: {
     color: COLORS.text,
-    fontSize: FONT_SIZES.lg,
+    fontSize: FONT_SIZES.md,
     fontWeight: '700',
     marginTop: 2,
+    maxWidth: 245,
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.success + '14',
+    borderWidth: 1,
+    borderColor: COLORS.success + '55',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.round,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: COLORS.success,
+    marginRight: SPACING.xs,
+  },
+  liveText: {
+    color: COLORS.successLight,
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '800',
   },
   cameraContainer: {
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xxl,
+    paddingBottom: SPACING.xl,
+  },
+  scanHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.xl,
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+  },
+  cameraSectionLabel: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '800',
+  },
+  scanCounter: {
+    color: COLORS.textMuted,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
   },
   cameraFrame: {
-    width: 220,
-    height: 220,
-    borderWidth: 3,
-    borderColor: COLORS.warning,
-    borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.surfaceLight,
+    width: '100%',
+    aspectRatio: 1,
+    borderWidth: 2,
+    borderColor: COLORS.borderLight,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    overflow: 'hidden',
+  },
+  cameraGridLineV: {
+    position: 'absolute',
+    top: 28,
+    bottom: 28,
+    width: 1,
+    backgroundColor: COLORS.border,
+    opacity: 0.45,
+  },
+  cameraGridLineH: {
+    position: 'absolute',
+    left: 28,
+    right: 28,
+    height: 1,
+    backgroundColor: COLORS.border,
+    opacity: 0.45,
   },
   corner: {
     position: 'absolute',
-    width: 24,
-    height: 24,
-    borderColor: COLORS.warningDark,
+    width: 42,
+    height: 42,
+    borderColor: COLORS.primary,
   },
   cornerTL: {
-    top: -2,
-    left: -2,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
+    top: 14,
+    left: 14,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
     borderTopLeftRadius: BORDER_RADIUS.md,
   },
   cornerTR: {
-    top: -2,
-    right: -2,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
+    top: 14,
+    right: 14,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
     borderTopRightRadius: BORDER_RADIUS.md,
   },
   cornerBL: {
-    bottom: -2,
-    left: -2,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
+    bottom: 14,
+    left: 14,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
     borderBottomLeftRadius: BORDER_RADIUS.md,
   },
   cornerBR: {
-    bottom: -2,
-    right: -2,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
+    bottom: 14,
+    right: 14,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
     borderBottomRightRadius: BORDER_RADIUS.md,
   },
+  scanLine: {
+    position: 'absolute',
+    left: 42,
+    right: 42,
+    height: 2,
+    backgroundColor: COLORS.primaryLight,
+    opacity: 0.8,
+  },
   cameraText: {
-    fontSize: 48,
+    color: COLORS.text,
+    fontSize: FONT_SIZES.xxl,
+    fontWeight: '800',
   },
   cameraHint: {
     color: COLORS.textSecondary,
@@ -248,43 +334,83 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     flex: 1,
   },
-  buttonsTitle: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZES.sm,
+  buttonsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
     marginBottom: SPACING.md,
-    textAlign: 'center',
+  },
+  buttonsTitle: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '800',
+  },
+  buttonsHint: {
+    color: COLORS.textMuted,
+    fontSize: FONT_SIZES.xs,
+  },
+  buttonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
   },
   scanButton: {
+    width: '48.5%',
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: COLORS.surface + 'CC',
     paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.sm,
+    borderWidth: 1,
   },
-  scanButtonIcon: {
-    fontSize: 18,
+  scanTone: {
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: SPACING.md,
+  },
+  scanToneText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '900',
   },
   scanButtonText: {
     color: COLORS.text,
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '700',
+    flex: 1,
   },
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: SPACING.md,
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.sm,
+    paddingVertical: SPACING.sm,
     borderTopWidth: 1,
+    borderWidth: 1,
     borderTopColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: BORDER_RADIUS.md,
   },
   navButton: {
     alignItems: 'center',
     paddingVertical: SPACING.xs,
+    minWidth: 72,
   },
   navIcon: {
-    fontSize: 20,
+    color: COLORS.text,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '900',
+    width: 34,
+    height: 28,
+    lineHeight: 28,
+    textAlign: 'center',
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.surfaceRaised,
+    overflow: 'hidden',
   },
   navLabel: {
     color: COLORS.textSecondary,

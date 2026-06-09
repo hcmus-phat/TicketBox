@@ -16,7 +16,10 @@ import {
   Alert,
   ActivityIndicator,
   StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -76,72 +79,105 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      {/* Network Status Badge */}
-      <View style={styles.networkBadge}>
-        <View
-          style={[
-            styles.networkDot,
-            { backgroundColor: isOnline ? COLORS.online : COLORS.offline },
-          ]}
-        />
-        <Text style={styles.networkText}>
-          {isOnline ? 'Online' : 'Offline'}
-        </Text>
-      </View>
-
-      {/* Logo */}
-      <View style={styles.logoContainer}>
-        <View style={styles.logoIcon}>
-          <Text style={styles.logoEmoji}>🎫</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboard}
+      >
+        <View style={styles.topBar}>
+          <View>
+            <Text style={styles.kicker}>TICKETBOX GATE</Text>
+            <Text style={styles.shiftText}>Ca tối · Cổng A2</Text>
+          </View>
+          <View style={styles.networkBadge}>
+            <View
+              style={[
+                styles.networkDot,
+                { backgroundColor: isOnline ? COLORS.online : COLORS.offline },
+              ]}
+            />
+            <Text style={styles.networkText}>
+              {isOnline ? 'Online' : 'Offline'}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.logoTitle}>TicketBox</Text>
-        <Text style={styles.logoSubtitle}>Check-in Staff Portal</Text>
-      </View>
 
-      {/* Form */}
-      <View style={styles.form}>
-        <Text style={styles.inputLabel}>Email / Mã nhân viên</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="staff@ticketbox.vn"
-          placeholderTextColor={COLORS.textMuted}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        <View style={styles.hero}>
+          <View style={styles.logoRow}>
+            <View style={styles.logoIcon}>
+              <Text style={styles.logoMark}>TB</Text>
+            </View>
+            <View style={styles.eventPill}>
+              <Text style={styles.eventPillText}>SKY TOUR 2026</Text>
+            </View>
+          </View>
+          <Text style={styles.logoTitle}>Mở ca check-in</Text>
+          <Text style={styles.logoSubtitle}>
+            Xác thực nhân viên trước khi quét vé và đồng bộ dữ liệu tại cổng.
+          </Text>
+        </View>
 
-        <Text style={styles.inputLabel}>Mật khẩu</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="••••••••"
-          placeholderTextColor={COLORS.textMuted}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.form}>
+          <View style={styles.inputBlock}>
+            <Text style={styles.inputLabel}>Email / Mã nhân viên</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="staff@ticketbox.vn"
+              placeholderTextColor={COLORS.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
 
-        <TouchableOpacity
-          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-          activeOpacity={0.8}
-        >
-          {loading ? (
-            <ActivityIndicator color={COLORS.text} />
-          ) : (
-            <Text style={styles.loginButtonText}>Đăng nhập</Text>
-          )}
-        </TouchableOpacity>
+          <View style={styles.inputBlock}>
+            <Text style={styles.inputLabel}>Mật khẩu</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nhap mat khau"
+              placeholderTextColor={COLORS.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
-        <Text style={styles.roleHint}>
-          Role mặc định: CHECKIN_STAFF
-        </Text>
-      </View>
-    </View>
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator color={COLORS.background} />
+            ) : (
+              <Text style={styles.loginButtonText}>Bắt đầu ca trực</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.shiftPanel}>
+          <View style={styles.shiftMetric}>
+            <Text style={styles.shiftMetricValue}>A2</Text>
+            <Text style={styles.shiftMetricLabel}>Cổng</Text>
+          </View>
+          <View style={styles.shiftDivider} />
+          <View style={styles.shiftMetric}>
+            <Text style={styles.shiftMetricValue}>19:00</Text>
+            <Text style={styles.shiftMetricLabel}>Mở cửa</Text>
+          </View>
+          <View style={styles.shiftDivider} />
+          <View style={styles.shiftMetric}>
+            <Text style={styles.shiftMetricValue}>0</Text>
+            <Text style={styles.shiftMetricLabel}>Chưa sync</Text>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -149,19 +185,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    paddingHorizontal: SPACING.xxl,
-    justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  keyboard: {
+    flex: 1,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xxl,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  kicker: {
+    color: COLORS.primaryLight,
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+  },
+  shiftText: {
+    color: COLORS.textMuted,
+    fontSize: FONT_SIZES.sm,
+    marginTop: 2,
   },
   networkBadge: {
-    position: 'absolute',
-    top: 50,
-    right: SPACING.xl,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.round,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   networkDot: {
     width: 8,
@@ -173,41 +228,71 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: FONT_SIZES.sm,
   },
-  logoContainer: {
+  hero: {
+    marginTop: SPACING.huge,
+    marginBottom: SPACING.xxl,
+  },
+  logoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.huge,
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xl,
   },
   logoIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: COLORS.primary,
+    width: 60,
+    height: 60,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
   },
-  logoEmoji: {
-    fontSize: 36,
+  logoMark: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.xl,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  eventPill: {
+    backgroundColor: COLORS.primary + '14',
+    borderWidth: 1,
+    borderColor: COLORS.primary + '55',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.round,
+  },
+  eventPillText: {
+    color: COLORS.primaryLight,
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
   logoTitle: {
     fontSize: FONT_SIZES.title,
     fontWeight: '800',
     color: COLORS.text,
-    letterSpacing: 1,
+    letterSpacing: 0,
   },
   logoSubtitle: {
-    fontSize: FONT_SIZES.md,
+    fontSize: FONT_SIZES.lg,
+    lineHeight: 24,
     color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
+    marginTop: SPACING.sm,
+    maxWidth: 340,
   },
   form: {
     width: '100%',
+    gap: SPACING.md,
+  },
+  inputBlock: {
+    gap: SPACING.xs,
   },
   inputLabel: {
     color: COLORS.textSecondary,
     fontSize: FONT_SIZES.sm,
-    marginBottom: SPACING.xs,
     marginLeft: SPACING.xs,
+    fontWeight: '600',
   },
   input: {
     backgroundColor: COLORS.surface,
@@ -218,11 +303,10 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginBottom: SPACING.lg,
   },
   loginButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.sm,
     paddingVertical: SPACING.lg,
     alignItems: 'center',
     marginTop: SPACING.md,
@@ -231,14 +315,37 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   loginButtonText: {
-    color: COLORS.text,
+    color: COLORS.background,
     fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
+    fontWeight: '800',
   },
-  roleHint: {
+  shiftPanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    marginTop: 'auto',
+    paddingVertical: SPACING.lg,
+  },
+  shiftMetric: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  shiftMetricValue: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.xl,
+    fontWeight: '900',
+  },
+  shiftMetricLabel: {
     color: COLORS.textMuted,
     fontSize: FONT_SIZES.xs,
-    textAlign: 'center',
-    marginTop: SPACING.lg,
+    marginTop: 2,
+  },
+  shiftDivider: {
+    width: 1,
+    height: 34,
+    backgroundColor: COLORS.border,
   },
 });

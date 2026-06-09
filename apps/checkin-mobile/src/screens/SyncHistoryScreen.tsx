@@ -12,6 +12,7 @@ import {
   FlatList,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONT_SIZES, SPACING, BORDER_RADIUS } from '../constants/theme';
 import type { SyncHistoryRecord } from '../types';
 
@@ -81,10 +82,10 @@ const MOCK_HISTORY: SyncHistoryRecord[] = [
   },
 ];
 
-const STATUS_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-  SUCCESS: { icon: '✅', color: COLORS.success, label: 'Thành công' },
-  FAILED: { icon: '❌', color: COLORS.error, label: 'Thất bại' },
-  PARTIAL: { icon: '⚠️', color: COLORS.warning, label: 'Một phần' },
+const STATUS_CONFIG: Record<string, { code: string; color: string; label: string }> = {
+  SUCCESS: { code: 'OK', color: COLORS.success, label: 'Thành công' },
+  FAILED: { code: 'NO', color: COLORS.error, label: 'Thất bại' },
+  PARTIAL: { code: 'PART', color: COLORS.warning, label: 'Một phần' },
 };
 
 export default function SyncHistoryScreen() {
@@ -100,7 +101,11 @@ export default function SyncHistoryScreen() {
     return (
       <View style={styles.historyItem}>
         <View style={styles.itemHeader}>
-          <Text style={styles.itemIcon}>{config.icon}</Text>
+          <View style={[styles.itemCode, { backgroundColor: config.color + '20' }]}>
+            <Text style={[styles.itemCodeText, { color: config.color }]}>
+              {config.code}
+            </Text>
+          </View>
           <View style={styles.itemInfo}>
             <Text style={styles.itemTime}>{time}</Text>
             <Text style={styles.itemCount}>
@@ -123,10 +128,9 @@ export default function SyncHistoryScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      {/* Stats */}
       <View style={styles.stats}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{MOCK_HISTORY.length}</Text>
@@ -148,7 +152,6 @@ export default function SyncHistoryScreen() {
         </View>
       </View>
 
-      {/* History List */}
       <FlatList
         data={MOCK_HISTORY}
         keyExtractor={(item) => item.id}
@@ -156,7 +159,7 @@ export default function SyncHistoryScreen() {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -169,10 +172,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: SPACING.xl,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
   },
   statItem: {
     alignItems: 'center',
@@ -195,23 +201,32 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.xxl,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xxxl,
   },
   separator: {
     height: 1,
     backgroundColor: COLORS.border,
   },
   historyItem: {
-    paddingVertical: SPACING.lg,
+    paddingVertical: SPACING.xl,
+    minHeight: 84,
   },
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  itemIcon: {
-    fontSize: 20,
+  itemCode: {
+    width: 50,
+    height: 32,
+    borderRadius: BORDER_RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: SPACING.md,
+  },
+  itemCodeText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '900',
   },
   itemInfo: {
     flex: 1,
@@ -219,7 +234,7 @@ const styles = StyleSheet.create({
   itemTime: {
     color: COLORS.text,
     fontSize: FONT_SIZES.md,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   itemCount: {
     color: COLORS.textSecondary,
@@ -239,7 +254,7 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: FONT_SIZES.xs,
     marginTop: SPACING.xs,
-    marginLeft: 36,
+    marginLeft: 62,
     fontStyle: 'italic',
   },
 });

@@ -11,7 +11,9 @@ import {
   StyleSheet,
   Alert,
   StatusBar,
+  ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -38,43 +40,47 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      {/* Profile Section */}
-      <View style={styles.profileCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>👤</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.profileCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>NV</Text>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.userName}>Nhân viên soát vé</Text>
+            <Text style={styles.userRole}>Đang trực cổng check-in</Text>
+          </View>
+          <View style={styles.profileBadge}>
+            <Text style={styles.profileBadgeText}>A2</Text>
+          </View>
         </View>
-        <Text style={styles.userName}>Nhân viên soát vé</Text>
-        <Text style={styles.userRole}>CHECKIN_STAFF</Text>
-      </View>
 
-      {/* Settings Items */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thông tin</Text>
-        <SettingRow label="Phiên bản" value="1.0.0" />
-        <SettingRow label="Device ID" value="device-A" />
-        <SettingRow label="Server" value="localhost:3000" />
-        <SettingRow label="Concert hiện tại" value="Sky Tour 2026" />
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin</Text>
+          <SettingRow label="Phiên bản" value="1.0.0" />
+          <SettingRow label="Device ID" value="device-A" />
+          <SettingRow label="Server" value="localhost:3000" />
+          <SettingRow label="Concert hiện tại" value="Sky Tour 2026" />
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Dữ liệu</Text>
-        <SettingRow label="Offline Queue" value="5 items" />
-        <SettingRow label="Cache concert" value="1 concert" />
-        <SettingRow label="Sync lần cuối" value="07/06/2026 20:00" />
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Dữ liệu</Text>
+          <SettingRow label="Offline Queue" value="5 items" />
+          <SettingRow label="Cache concert" value="1 concert" />
+          <SettingRow label="Sync lần cuối" value="07/06/2026 20:00" />
+        </View>
 
-      {/* Logout */}
-      <TouchableOpacity
-        style={styles.logoutButton}
-        onPress={handleLogout}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.logoutText}>🚪 Đăng xuất</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -92,24 +98,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  content: {
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xxxl,
+  },
   profileCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.xxxl,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    padding: SPACING.lg,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
   },
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: BORDER_RADIUS.md,
     backgroundColor: COLORS.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginRight: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
   },
   avatarText: {
-    fontSize: 28,
+    color: COLORS.text,
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '900',
+  },
+  profileInfo: {
+    flex: 1,
   },
   userName: {
     color: COLORS.text,
@@ -117,13 +137,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   userRole: {
-    color: COLORS.primary,
+    color: COLORS.primaryLight,
     fontSize: FONT_SIZES.sm,
     fontWeight: '600',
     marginTop: SPACING.xs,
   },
+  profileBadge: {
+    width: 42,
+    height: 34,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileBadgeText: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '900',
+  },
   section: {
-    paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.xl,
   },
   sectionTitle: {
@@ -136,6 +168,7 @@ const styles = StyleSheet.create({
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -143,17 +176,20 @@ const styles = StyleSheet.create({
   settingLabel: {
     color: COLORS.textSecondary,
     fontSize: FONT_SIZES.md,
+    flex: 1,
   },
   settingValue: {
     color: COLORS.text,
     fontSize: FONT_SIZES.md,
     fontWeight: '500',
+    flex: 1.2,
+    textAlign: 'right',
   },
   logoutButton: {
     marginHorizontal: SPACING.xl,
     marginTop: SPACING.xxxl,
     paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.error,
     alignItems: 'center',
