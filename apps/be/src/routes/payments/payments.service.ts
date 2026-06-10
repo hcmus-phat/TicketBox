@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -147,6 +148,7 @@ export class PaymentsService {
           paymentUrl: this.gateway.buildPaymentUrl(
             provider,
             order.paymentRef,
+            order.totalAmount.toString(),
             dto.returnUrl,
           ),
           expiresAt: order.expiresAt.toISOString(),
@@ -169,6 +171,7 @@ export class PaymentsService {
       const paymentUrl = this.gateway.buildPaymentUrl(
         dto.provider as Provider,
         paymentRef,
+        updated.totalAmount.toString(),
         dto.returnUrl,
       );
 
@@ -259,6 +262,46 @@ export class PaymentsService {
       paymentStatus: this.toPaymentStatus(finalStatus),
       retryAction: this.toRetryAction(finalStatus),
     };
+  }
+
+  /**
+   * GET Webhook / IPN handler (specifically for VNPAY).
+   * Verifies the SHA-512 signature and maps parameters to unified payload.
+   */
+  async handleWebhookGet(
+    provider: Provider,
+    query: any,
+  ): Promise<{ processed: boolean; orderStatus: string; paymentStatus: string }> {
+    if (provider === 'VNPAY') {
+      const isValid = this.gateway.verifyVnpaySignature(query);
+      if (!isValid) {
+        throw new UnauthorizedException('Invalid VNPAY signature');
+      }
+
+      const vnpResponseCode = query['vnp_ResponseCode'];
+      // VNPAY uses '00' for success
+      const eventType: 'SUCCESS' | 'FAILED' = vnpResponseCode === '00' ? 'SUCCESS' : 'FAILED';
+      const amountInCents = Number(query['vnp_Amount']);
+      const amount = amountInCents / 100;
+
+      const mockDto = {
+        paymentRef: query['vnp_TxnRef'],
+        gatewayTransactionId: query['vnp_TransactionNo'],
+        eventType,
+        amount,
+        currency: query['vnp_CurrCode'] ?? 'VND',
+        signature: query['vnp_SecureHash'],
+      };
+
+      const result = await this.handleWebhook(provider, mockDto);
+      return {
+        processed: result.processed,
+        orderStatus: result.orderStatus,
+        paymentStatus: result.paymentStatus,
+      };
+    }
+
+    throw new BadRequestException(`HTTP GET Webhook not supported for provider: ${provider}`);
   }
 
   private async handleSuccess(

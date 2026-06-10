@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
   Headers,
 } from '@nestjs/common';
@@ -122,6 +123,37 @@ export class PaymentsController {
       provider.toUpperCase() as Provider,
       dto,
     );
+
+    return result;
+  }
+
+  /**
+   * GET /payments/webhooks/:provider
+   * Hỗ trợ nhận webhook/IPN qua phương thức GET (VNPAY IPN).
+   */
+  @Get('webhooks/:provider')
+  @HttpCode(HttpStatus.OK)
+  async webhookGet(
+    @Param('provider') provider: string,
+    @Query() query: any,
+  ) {
+    const validProviders: Provider[] = ['VNPAY', 'MOMO'];
+
+    if (!validProviders.includes(provider.toUpperCase() as Provider)) {
+      throw new BadRequestException(`Unknown payment provider: ${provider}`);
+    }
+
+    const result = await this.paymentsService.handleWebhookGet(
+      provider.toUpperCase() as Provider,
+      query,
+    );
+
+    if (provider.toUpperCase() === 'VNPAY') {
+      return {
+        RspCode: result.processed ? '00' : '99',
+        Message: result.processed ? 'Confirm Success' : 'Confirm Fail',
+      };
+    }
 
     return result;
   }
