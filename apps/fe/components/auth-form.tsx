@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogIn, UserPlus } from 'lucide-react';
-import { login, register } from '@/lib/api';
+import { login, register, getFriendlyErrorMessage } from '@/lib/api';
 
 type AuthMode = 'login' | 'register';
 
@@ -62,7 +62,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       router.push('/');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể xử lý yêu cầu.');
+      setMessage(getFriendlyErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

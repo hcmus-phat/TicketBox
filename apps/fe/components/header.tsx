@@ -93,12 +93,14 @@ export function Header() {
         </form>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/admin/dashboard"
-            className="hidden rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary/40 hover:text-primary sm:inline-flex"
-          >
-            Admin
-          </Link>
+          {session?.user?.roles?.some((role: any) => role.name === 'admin') && (
+            <Link
+              href="/admin/dashboard"
+              className="hidden rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary/40 hover:text-primary sm:inline-flex"
+            >
+              Admin
+            </Link>
+          )}
           <div className="relative">
             <button
               type="button"
@@ -146,14 +148,24 @@ export function Header() {
                       </span>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-bold text-foreground transition hover:border-destructive/40 hover:text-destructive"
-                  >
-                    <LogOut className="size-4" />
-                    Đăng xuất
-                  </button>
+                  <div className="mt-4 flex flex-col gap-2">
+                    <Link
+                      href="/my-tickets"
+                      onClick={() => setShowAccount(false)}
+                      className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-bold text-foreground transition hover:border-primary/40 hover:text-primary"
+                    >
+                      <Ticket className="size-4" />
+                      Vé của tôi
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-bold text-foreground transition hover:border-destructive/40 hover:text-destructive"
+                    >
+                      <LogOut className="size-4" />
+                      Đăng xuất
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

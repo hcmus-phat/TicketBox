@@ -1,5 +1,46 @@
 export const API_BASE_URL = 'http://127.0.0.1:4000';
 
+export class ApiError extends Error {
+  statusCode?: number;
+  constructor(message: string, statusCode?: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+  }
+}
+
+export function getFriendlyErrorMessage(error: any): string {
+  if (error instanceof ApiError) {
+    const code = error.statusCode;
+    const msg = error.message?.toLowerCase() || '';
+
+    if (code === 429) {
+      return 'Yêu cầu quá nhanh. Vui lòng thử lại sau vài giây (Rate Limit).';
+    }
+    if (code === 503) {
+      return 'Hệ thống đang bận hoặc đang bảo trì (Circuit Breaker). Vui lòng quay lại sau.';
+    }
+    if (code === 403) {
+      return 'Bạn không có quyền thực hiện hành động này.';
+    }
+
+    if (msg.includes('sold out') || msg.includes('hết vé') || msg.includes('sold_out')) {
+      return 'Xin lỗi, loại vé này đã được bán hết.';
+    }
+    if (msg.includes('max_per_user') || msg.includes('max per user') || msg.includes('vượt quá số lượng')) {
+      return 'Bạn đã vượt quá số lượng vé tối đa được phép mua cho mỗi tài khoản.';
+    }
+    if (msg.includes('expired') || msg.includes('hết hạn')) {
+      return 'Phiên đặt giữ ghế của bạn đã hết hạn. Vui lòng chọn lại ghế.';
+    }
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Đã có lỗi xảy ra.';
+}
+
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   
@@ -25,7 +66,9 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'API Request failed');
+    const message = errorData.message || 'API Request failed';
+    const statusCode = errorData.metadata?.statusCode || response.status;
+    throw new ApiError(message, statusCode);
   }
 
   // BE wrapper format: { statusCode, message, data, metadata }
@@ -96,6 +139,7 @@ function mapConcertToDisplay(concert: any) {
     status: statusDisplay,
     seatMapSvgUrl: concert.seatMapSvgUrl,
     rawStatus: concert.status,
+    seatZones: concert.seatZones,
   };
 }
 
@@ -103,8 +147,24 @@ function mapConcertToDisplay(concert: any) {
 // ORDERS
 // ----------------------------------------------------
 
-export async function createOrder(payload: any) {
+export async function createOrder(payload: any, idempotencyKey?: string) {
+  const headers: Record<string, string> = {};
+  if (idempotencyKey) {
+    headers['idempotency-key'] = idempotencyKey;
+  }
   return await fetchApi('/orders', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+}
+
+// ----------------------------------------------------
+// PAYMENTS
+// ----------------------------------------------------
+
+export async function createPayment(payload: { orderId: string; provider: string; returnUrl?: string }) {
+  return await fetchApi('/payments/create', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -153,16 +213,38 @@ export async function logout() {
 // to avoid circular dependency for now, or just expose async mock functions.
 import { getTicketZonesByConcertId, getSeatsByConcertId } from './mock-data';
 
-export async function getTicketZonesAsync(concertId: string) {
+export async function getTicketZonesAsync(concertId: string, preFetchedSeatZones?: any[]) {
   try {
-    const concert = await fetchApi(`/concerts/${concertId}`, { next: { revalidate: 60 } } as any);
-    if (!concert.seatZones || concert.seatZones.length === 0) {
+    let seatZones = preFetchedSeatZones;
+    if (!seatZones) {
+      const concert = await fetchApi(`/concerts/${concertId}`, { next: { revalidate: 60 } } as any);
+      seatZones = concert.seatZones;
+    }
+
+    if (!seatZones || seatZones.length === 0) {
+      const localTypes = getLocalTicketTypes(concertId);
+      if (localTypes && localTypes.length > 0) {
+        return localTypes.map((t, idx) => ({
+          id: t.id,
+          name: t.name,
+          label: t.name,
+          price: t.price,
+          remaining: t.remaining,
+          total: t.totalQuantity,
+          color: ['#ff3b30', '#ffcc00', '#34c759', '#007aff', '#af52de'][idx % 5],
+          description: '',
+          status: t.remaining === 0 ? 'sold-out' : t.remaining / t.totalQuantity <= 0.15 ? 'limited' : 'available',
+          concertId,
+          seatZoneId: t.id,
+          ticketTypeId: t.id,
+        }));
+      }
       return getTicketZonesByConcertId(concertId); // fallback if no real zones
     }
 
     const validMockCodes = ['svip', 'vip', 'premium', 'standard', 'economy'];
 
-    return concert.seatZones.flatMap((zone: any, index: number) => {
+    return seatZones.flatMap((zone: any, index: number) => {
       const ticketType = zone.ticketTypes?.[0];
       if (!ticketType) return [];
 
@@ -193,17 +275,22 @@ export async function getTicketZonesAsync(concertId: string) {
   }
 }
 
-export async function getSeatsAsync(concertId: string) {
+export async function getSeatsAsync(concertId: string, preFetchedSeatZones?: any[]) {
   try {
-    const concert = await fetchApi(`/concerts/${concertId}`, { next: { revalidate: 60 } } as any);
-    if (!concert.seatZones || concert.seatZones.length === 0) {
+    let seatZones = preFetchedSeatZones;
+    if (!seatZones) {
+      const concert = await fetchApi(`/concerts/${concertId}`, { next: { revalidate: 60 } } as any);
+      seatZones = concert.seatZones;
+    }
+
+    if (!seatZones || seatZones.length === 0) {
        return getSeatsByConcertId(concertId);
     }
 
     const seats: any[] = [];
     const validMockCodes = ['svip', 'vip', 'premium', 'standard', 'economy'];
     
-    concert.seatZones.forEach((zone: any, index: number) => {
+    seatZones.forEach((zone: any, index: number) => {
       const mockCode = validMockCodes[index % validMockCodes.length];
       const rowNames = ['A', 'B', 'C', 'D'];
       const seatsPerRow = 12;
@@ -231,5 +318,97 @@ export async function getSeatsAsync(concertId: string) {
     return seats;
   } catch (error) {
     return getSeatsByConcertId(concertId);
+  }
+}
+
+// ----------------------------------------------------
+// LOCAL STORAGE TICKET TYPES FALLBACK (For Admin CRUD)
+// ----------------------------------------------------
+
+const TICKET_TYPES_LOCAL_KEY = 'ticketbox-local-ticket-types';
+
+export function getLocalTicketTypes(concertId: string): any[] {
+  if (typeof window === 'undefined') return [];
+  const stored = window.localStorage.getItem(`${TICKET_TYPES_LOCAL_KEY}-${concertId}`);
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalTicketTypes(concertId: string, types: any[]) {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(`${TICKET_TYPES_LOCAL_KEY}-${concertId}`, JSON.stringify(types));
+  }
+}
+
+export async function createTicketType(concertId: string, payload: any) {
+  try {
+    return await fetchApi(`/concerts/${concertId}/ticket-types`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('Backend API /ticket-types not found, falling back to LocalStorage', err);
+    const mockTypes = getLocalTicketTypes(concertId);
+    const newType = {
+      id: `tickettype-${Date.now()}`,
+      concertId,
+      name: payload.name,
+      price: Number(payload.price),
+      totalQuantity: Number(payload.totalQuantity),
+      remaining: Number(payload.totalQuantity),
+      maxPerUser: Number(payload.maxPerUser || 4),
+      status: 'ACTIVE',
+      saleStartAt: payload.saleStartAt || null,
+      saleEndAt: payload.saleEndAt || null,
+    };
+    const updated = [...mockTypes, newType];
+    saveLocalTicketTypes(concertId, updated);
+    return newType;
+  }
+}
+
+export async function updateTicketType(concertId: string, ticketTypeId: string, payload: any) {
+  try {
+    return await fetchApi(`/concerts/${concertId}/ticket-types/${ticketTypeId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('Backend API /ticket-types not found, falling back to LocalStorage', err);
+    const mockTypes = getLocalTicketTypes(concertId);
+    const updated = mockTypes.map((t: any) => {
+      if (t.id === ticketTypeId) {
+        return {
+          ...t,
+          name: payload.name,
+          price: Number(payload.price),
+          totalQuantity: Number(payload.totalQuantity),
+          maxPerUser: Number(payload.maxPerUser || 4),
+          saleStartAt: payload.saleStartAt || null,
+          saleEndAt: payload.saleEndAt || null,
+        };
+      }
+      return t;
+    });
+    saveLocalTicketTypes(concertId, updated);
+    return { id: ticketTypeId, ...payload };
+  }
+}
+
+export async function deleteTicketType(concertId: string, ticketTypeId: string) {
+  try {
+    return await fetchApi(`/concerts/${concertId}/ticket-types/${ticketTypeId}`, {
+      method: 'DELETE',
+    });
+  } catch (err) {
+    console.warn('Backend API /ticket-types not found, falling back to LocalStorage', err);
+    const mockTypes = getLocalTicketTypes(concertId);
+    const updated = mockTypes.filter((t: any) => t.id !== ticketTypeId);
+    saveLocalTicketTypes(concertId, updated);
+    return { success: true };
   }
 }

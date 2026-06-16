@@ -26,8 +26,8 @@ export default async function ConcertDetailPage({ params }: ConcertDetailPagePro
     notFound();
   }
 
-  const concertZones = await getTicketZonesAsync(concert.id);
-  const concertSeats = await getSeatsAsync(concert.id);
+  const concertZones = await getTicketZonesAsync(concert.id, concert.seatZones);
+  const concertSeats = await getSeatsAsync(concert.id, concert.seatZones);
 
   return (
     <main className="min-h-screen bg-background">

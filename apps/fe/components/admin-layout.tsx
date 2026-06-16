@@ -1,74 +1,200 @@
-import { LayoutDashboard, List, LogOut, Plus, Settings, Ticket } from 'lucide-react';
+"use client";
+
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { LayoutDashboard, List, LogOut, Plus, Settings, Ticket, Home } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
+import { getProfile, logout } from '@/lib/api';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const token = window.localStorage.getItem('access_token');
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+        const profile = await getProfile();
+        const isAdmin = profile?.roles?.some((role: any) => role.name === 'admin');
+        if (isAdmin) {
+          setAuthorized(true);
+        } else {
+          router.push('/');
+        }
+      } catch (err) {
+        console.error(err);
+        router.push('/login');
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkAuth();
+  }, [router]);
+
+  const menuItems = [
+    {
+      href: '/admin/dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      exact: true,
+    },
+    {
+      href: '/admin/concerts',
+      label: 'Sự kiện',
+      icon: List,
+      exact: false, // matches subroutes like /admin/concerts/:id
+    },
+    {
+      href: '/admin/create-concert',
+      label: 'Tạo sự kiện',
+      icon: Plus,
+      exact: true,
+    },
+    {
+      href: '/admin/settings',
+      label: 'Cài đặt',
+      icon: Settings,
+      exact: true,
+    },
+  ];
+
+  const isActive = (item: typeof menuItems[0]) => {
+    if (item.exact) {
+      return pathname === item.href;
+    }
+    return pathname.startsWith(item.href);
+  };
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      router.push('/');
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!authorized) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background lg:flex">
-      <aside className="flex border-b border-sidebar-border bg-sidebar text-sidebar-foreground lg:fixed lg:inset-y-0 lg:w-72 lg:flex-col lg:border-b-0 lg:border-r">
-        <div className="flex min-w-64 items-center gap-3 border-sidebar-border p-4 lg:border-b lg:p-6">
-          <span className="grid size-10 place-items-center rounded-2xl bg-primary text-primary-foreground">
-            <Ticket className="size-5" />
+      {/* Sidebar Container */}
+      <aside className="flex flex-col border-b border-sidebar-border bg-sidebar text-sidebar-foreground lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r shadow-2xl z-30 transition-all duration-300">
+        
+        {/* Logo and Brand Header */}
+        <div className="flex items-center gap-3 border-sidebar-border p-5 lg:border-b lg:py-6 lg:px-6">
+          <span className="grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <Ticket className="size-5.5" />
           </span>
           <div>
-            <h1 className="text-xl font-black tracking-tight">TicketBox</h1>
-            <p className="mt-0.5 text-xs text-sidebar-foreground/55">Operations</p>
+            <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
+              TicketBox
+            </h1>
+            <p className="text-[10px] uppercase font-bold tracking-[0.15em] text-sidebar-foreground/45 mt-0.5">
+              Hệ thống Quản trị
+            </p>
           </div>
         </div>
 
-        <nav className="flex flex-1 gap-2 overflow-x-auto p-3 lg:flex-col lg:overflow-y-auto lg:p-4">
-          <Link
-            href="/admin/dashboard"
-            className="flex shrink-0 items-center gap-3 rounded-2xl bg-primary px-4 py-2 font-bold text-primary-foreground transition hover:bg-primary/90"
-          >
-            <LayoutDashboard className="size-5" />
-            Dashboard
-          </Link>
-          <Link
-            href="/admin/concerts"
-            className="flex shrink-0 items-center gap-3 rounded-2xl px-4 py-2 text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          >
-            <List className="size-5" />
-            Sự kiện
-          </Link>
-          <Link
-            href="/admin/create-concert"
-            className="flex shrink-0 items-center gap-3 rounded-2xl px-4 py-2 text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          >
-            <Plus className="size-5" />
-            Tạo sự kiện
-          </Link>
-          <Link
-            href="/admin/settings"
-            className="flex shrink-0 items-center gap-3 rounded-2xl px-4 py-2 text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          >
-            <Settings className="size-5" />
-            Cài đặt
-          </Link>
+        {/* Sidebar Nav Links */}
+        <nav className="flex flex-row overflow-x-auto p-3 gap-1.5 lg:flex-col lg:overflow-y-auto lg:p-5 lg:flex-grow">
+          {menuItems.map((item) => {
+            const active = isActive(item);
+            const Icon = item.icon;
+            
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all duration-200 cursor-pointer ${
+                  active
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10 scale-[1.02]'
+                    : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:translate-x-0.5'
+                }`}
+              >
+                <Icon className={`size-5 ${active ? 'text-primary-foreground' : 'text-sidebar-foreground/45'}`} />
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="flex items-center p-3 lg:hidden">
-          <ThemeToggle inverse />
-        </div>
+        {/* Bottom Panel */}
+        <div className="border-t border-sidebar-border p-5 hidden lg:flex flex-col gap-4">
+          
+          {/* Back to Homepage */}
+          <Link
+            href="/"
+            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition"
+          >
+            <Home className="size-5 text-sidebar-foreground/40" />
+            Về Trang chủ
+          </Link>
 
-        <div className="hidden border-t border-sidebar-border p-4 lg:block">
-          <div className="mb-3 flex items-center justify-between rounded-2xl bg-sidebar-accent p-2 pl-4">
-            <span className="text-sm font-bold text-sidebar-foreground/70">Giao diện</span>
+          {/* Theme Toggle */}
+          <div className="flex items-center justify-between rounded-2xl bg-sidebar-accent p-2 pl-4 border border-sidebar-border/40">
+            <span className="text-xs font-bold uppercase tracking-wider text-sidebar-foreground/60">Giao diện</span>
             <ThemeToggle inverse />
           </div>
-          <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-2 font-bold text-primary transition hover:bg-sidebar-accent">
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
+          >
             <LogOut className="size-5" />
             Đăng xuất
           </button>
         </div>
+
+        {/* Mobile View Bottom Panels */}
+        <div className="flex items-center gap-2 p-3 lg:hidden border-t border-sidebar-border/30 bg-sidebar-accent/50 justify-between">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-xs font-bold text-sidebar-foreground/60 px-3 py-1.5 rounded-xl hover:bg-sidebar-accent"
+          >
+            <Home className="size-4" />
+            Trang chủ
+          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle inverse />
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-xl transition cursor-pointer"
+              aria-label="Đăng xuất"
+            >
+              <LogOut className="size-4.5" />
+            </button>
+          </div>
+        </div>
+
       </aside>
 
-      <main className="min-w-0 flex-1 lg:pl-72">
-        <div className="p-4 md:p-8">
+      {/* Main Content Area */}
+      <main className="min-w-0 flex-1 lg:pl-72 transition-all duration-300">
+        <div className="p-5 md:p-8 lg:p-10 max-w-7xl mx-auto">
           {children}
         </div>
       </main>

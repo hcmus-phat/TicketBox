@@ -140,11 +140,12 @@ export function getStoredMockOrder(orderId: string): StoredMockOrder | null {
 export function createMockOrderFromDraft(input: {
   draft: DraftReservation;
   paymentMethod: string;
+  orderId?: string;
 }): StoredMockOrder {
   const paidAt = new Date();
   const subtotal = input.draft.item.quantity * input.draft.item.unitPrice;
   const totalAmount = subtotal + Math.round(subtotal * 0.05) + Math.round(subtotal * 0.1);
-  const orderId = `order-${input.draft.concertId}-${paidAt.getTime()}`;
+  const orderId = input.orderId || `order-${input.draft.concertId}-${paidAt.getTime()}`;
   const orderNumber = `ORD-${paidAt.getFullYear()}-${String(paidAt.getTime()).slice(-6)}`;
 
   const tickets = input.draft.item.seatLabels.map((seatLabel, index) => {

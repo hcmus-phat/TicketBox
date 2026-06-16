@@ -7,7 +7,7 @@ import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { CheckoutSummary } from '@/components/checkout-summary';
 import { checkoutMock, concerts, paymentMethods } from '@/lib/mock-data';
 import { createDraftReservation, DraftReservation, getDraftReservation } from '@/lib/mock-reservation';
-import { createOrder } from '@/lib/api';
+import { createOrder, createPayment, getFriendlyErrorMessage } from '@/lib/api';
 
 interface CheckoutViewModel {
   concertId: string;
@@ -94,6 +94,10 @@ export function CheckoutFlow() {
     setError('');
 
     try {
+      const idempotencyKey = typeof window !== 'undefined' && window.crypto?.randomUUID 
+        ? window.crypto.randomUUID() 
+        : `idempotency-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
       const orderResponse = await createOrder({
         concertId: checkout.concertId,
         items: [
@@ -102,11 +106,28 @@ export function CheckoutFlow() {
             quantity: checkout.quantity,
           }
         ]
+      }, idempotencyKey);
+
+      const orderId = orderResponse.orderId || orderResponse.data?.orderId;
+      if (!orderId) {
+        throw new Error('Không nhận được Mã đơn hàng từ hệ thống.');
+      }
+
+      const returnUrl = `${window.location.origin}/success?orderId=${encodeURIComponent(orderId)}`;
+
+      const paymentResponse = await createPayment({
+        orderId,
+        provider: paymentMethod.toUpperCase(),
+        returnUrl,
       });
 
-      router.push(`/success?orderId=${encodeURIComponent(orderResponse.orderId)}`);
+      if (paymentResponse.paymentUrl) {
+        router.push(paymentResponse.paymentUrl);
+      } else {
+        router.push(`/success?orderId=${encodeURIComponent(orderId)}`);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Đã có lỗi xảy ra.');
+      setError(getFriendlyErrorMessage(err));
       setIsSubmitting(false);
     }
   }

@@ -72,7 +72,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Featured ticket</p>
                   <p className="mt-1 text-lg font-black text-foreground">{featured.price.toLocaleString('vi-VN')}đ</p>
                 </div>
-                <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">{featured.status}</span>
+                <span className="inline-flex items-center justify-center whitespace-nowrap rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">{featured.status}</span>
               </div>
               <div className="grid gap-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
