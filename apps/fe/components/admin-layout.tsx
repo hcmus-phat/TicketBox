@@ -54,12 +54,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Sự kiện',
       icon: List,
       exact: false, // matches subroutes like /admin/concerts/:id
-    },
-    {
-      href: '/admin/create-concert',
-      label: 'Tạo sự kiện',
-      icon: Plus,
-      exact: true,
+      extraMatches: ['/admin/create-concert'],
     },
     {
       href: '/admin/settings',
@@ -69,11 +64,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     },
   ];
 
-  const isActive = (item: typeof menuItems[0]) => {
+  const isActive = (item: any) => {
     if (item.exact) {
       return pathname === item.href;
     }
-    return pathname.startsWith(item.href);
+    if (pathname.startsWith(item.href)) {
+      return true;
+    }
+    if (item.extraMatches && item.extraMatches.some((path: string) => pathname.startsWith(path))) {
+      return true;
+    }
+    return false;
   };
 
   async function handleLogout() {
@@ -154,8 +155,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </Link>
 
           {/* Theme Toggle */}
-          <div className="flex items-center justify-between rounded-2xl bg-sidebar-accent p-2 pl-4 border border-sidebar-border/40">
-            <span className="text-xs font-bold uppercase tracking-wider text-sidebar-foreground/60">Giao diện</span>
+          <div className="flex items-center pl-1.5">
             <ThemeToggle inverse />
           </div>
 

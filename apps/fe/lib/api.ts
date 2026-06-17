@@ -616,11 +616,53 @@ export async function updateConcertBio(concertId: string, bio: string): Promise<
   }
 }
 
-// ----------------------------------------------------
-// NOTIFICATIONS (REAL/FALLBACK)
-// ----------------------------------------------------
+// Helper to parse current user from localStorage token
+function getCurrentUserEmail(): string {
+  if (typeof window === 'undefined') return 'guest';
+  const token = window.localStorage.getItem('access_token');
+  if (!token) return 'guest';
 
-const NOTIFICATIONS_LOCAL_KEY = 'ticketbox-local-notifications';
+  // Check if mock token (mock-access-token.${btoa(`${user.id}:${user.email}`)}.${Date.now()})
+  if (token.startsWith('mock-access-token.')) {
+    try {
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        const decoded = atob(parts[1]); // e.g. "user.id:user.email"
+        const email = decoded.split(':')[1];
+        if (email) return email.toLowerCase().trim();
+      }
+    } catch (e) {
+      console.warn('Failed to parse mock token:', e);
+    }
+  }
+
+  // Check if standard JWT token (3 parts)
+  const parts = token.split('.');
+  if (parts.length === 3) {
+    try {
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const payload = JSON.parse(jsonPayload);
+      const email = payload.email || payload.sub || payload.id;
+      if (email) return String(email).toLowerCase().trim();
+    } catch (e) {
+      console.warn('Failed to parse JWT token:', e);
+    }
+  }
+
+  return 'default';
+}
+
+function getNotificationsStorageKey(): string {
+  const emailKey = getCurrentUserEmail().replace(/[^a-z0-9@._-]/g, '_');
+  return `ticketbox-local-notifications-${emailKey}`;
+}
 
 export interface NotificationItem {
   id: string;
@@ -632,7 +674,8 @@ export interface NotificationItem {
 
 function getLocalNotifications(): NotificationItem[] {
   if (typeof window === 'undefined') return [];
-  const stored = window.localStorage.getItem(NOTIFICATIONS_LOCAL_KEY);
+  const key = getNotificationsStorageKey();
+  const stored = window.localStorage.getItem(key);
   if (!stored) {
     const defaultNotifs: NotificationItem[] = [
       {
@@ -650,7 +693,7 @@ function getLocalNotifications(): NotificationItem[] {
         createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
       },
     ];
-    window.localStorage.setItem(NOTIFICATIONS_LOCAL_KEY, JSON.stringify(defaultNotifs));
+    window.localStorage.setItem(key, JSON.stringify(defaultNotifs));
     return defaultNotifs;
   }
   try {
@@ -677,7 +720,7 @@ export async function markNotificationRead(id: string): Promise<any> {
     const items = getLocalNotifications();
     const updated = items.map((n) => (n.id === id ? { ...n, read: true } : n));
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(NOTIFICATIONS_LOCAL_KEY, JSON.stringify(updated));
+      window.localStorage.setItem(getNotificationsStorageKey(), JSON.stringify(updated));
     }
     return { success: true };
   }
@@ -690,7 +733,7 @@ export async function markAllNotificationsRead(): Promise<any> {
     const items = getLocalNotifications();
     const updated = items.map((n) => ({ ...n, read: true }));
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(NOTIFICATIONS_LOCAL_KEY, JSON.stringify(updated));
+      window.localStorage.setItem(getNotificationsStorageKey(), JSON.stringify(updated));
     }
     return { success: true };
   }
@@ -706,7 +749,7 @@ export function addLocalNotification(title: string, message: string) {
     read: false,
     createdAt: new Date().toISOString(),
   };
-  window.localStorage.setItem(NOTIFICATIONS_LOCAL_KEY, JSON.stringify([newItem, ...items]));
+  window.localStorage.setItem(getNotificationsStorageKey(), JSON.stringify([newItem, ...items]));
 
   // Dispatch custom event to show Toast alert
   window.dispatchEvent(new CustomEvent('ticketbox-toast', {
