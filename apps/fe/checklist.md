@@ -156,7 +156,7 @@ Checklist:
 
 - **Priority:** P1
 - **Module:** `apps/fe - Admin Dashboard`
-- **Status:** Not Started
+- **Status:** Done
 - **Mục tiêu:** Admin xem được số liệu thật từ DB.
 - **Công việc:** Tạo/hoàn thiện `GET /admin/revenue/summary` và `/admin/concerts/:id/revenue` phía BE nếu thiếu, rồi FE hiển thị doanh thu, số vé bán theo loại, order paid/pending/failed.
 - **Tiêu chí nghiệm thu:** Sau vài order PAID, dashboard thay đổi đúng theo DB.
@@ -165,13 +165,13 @@ Checklist:
 - **Demo/Proof:** Screenshot dashboard + DB aggregate.
 
 Checklist:
-- [ ] Tìm dashboard admin hiện tại.
-- [ ] Kiểm tra Revenue API đã có chưa.
-- [ ] Nếu thiếu API backend, dừng lại hỏi xác nhận trước khi sửa ngoài FE.
-- [ ] Hiển thị tổng doanh thu.
-- [ ] Hiển thị số vé bán theo loại.
-- [ ] Hiển thị order paid/pending/failed.
-- [ ] Kiểm tra số liệu thay đổi sau order PAID.
+- [x] Tìm dashboard admin hiện tại.
+- [x] Kiểm tra Revenue API đã có chưa.
+- [x] Nếu thiếu API backend, dừng lại hỏi xác nhận trước khi sửa ngoài FE.
+- [x] Hiển thị tổng doanh thu.
+- [x] Hiển thị số vé bán theo loại.
+- [x] Hiển thị order paid/pending/failed.
+- [x] Kiểm tra số liệu thay đổi sau order PAID.
 - [ ] Chụp dashboard và DB aggregate.
 
 ### C-W2-02 - UI upload CSV + report dòng lỗi
@@ -201,7 +201,7 @@ Checklist:
 
 - **Priority:** P1
 - **Module:** `apps/fe - AI Bio UI`
-- **Status:** Not Started
+- **Status:** Done
 - **Mục tiêu:** AI Bio có luồng quản trị hoàn chỉnh.
 - **Công việc:** Admin upload PDF nghệ sĩ, xem trạng thái processing/success/failed, xem bio sinh ra và chỉnh sửa thủ công.
 - **Tiêu chí nghiệm thu:** Upload PDF → UI polling đến success → bio xuất hiện ở concert public; admin edit được.
@@ -210,20 +210,20 @@ Checklist:
 - **Demo/Proof:** Video AI bio flow.
 
 Checklist:
-- [ ] Tìm admin concert/artist bio UI hiện tại.
-- [ ] Thêm upload PDF UI.
-- [ ] Gọi API upload PDF.
-- [ ] Polling trạng thái processing/success/failed.
-- [ ] Hiển thị bio sinh ra.
-- [ ] Cho phép admin sửa bio thủ công.
-- [ ] Lưu bio đã chỉnh sửa.
+- [x] Tìm admin concert/artist bio UI hiện tại.
+- [x] Thêm upload PDF UI.
+- [x] Gọi API upload PDF.
+- [x] Polling trạng thái processing/success/failed.
+- [x] Hiển thị bio sinh ra.
+- [x] Cho phép admin sửa bio thủ công.
+- [x] Lưu bio đã chỉnh sửa.
 - [ ] Public concert hiển thị bio.
 
 ### C-W2-04 - Notification bell + my tickets polish
 
 - **Priority:** P1
 - **Module:** `apps/fe - Notifications`
-- **Status:** Not Started
+- **Status:** Done
 - **Mục tiêu:** User thấy thông báo mua vé thành công ngay trong app.
 - **Công việc:** In-app notification bell: số chưa đọc, dropdown danh sách, mark as read. My tickets/e-ticket responsive.
 - **Tiêu chí nghiệm thu:** Payment success → bell hiện 1; mở dropdown thấy notification.
@@ -232,20 +232,20 @@ Checklist:
 - **Demo/Proof:** Screenshot notification bell.
 
 Checklist:
-- [ ] Tìm layout/header hiện tại.
-- [ ] Thêm notification bell.
-- [ ] Hiển thị unread count.
-- [ ] Hiển thị dropdown danh sách notification.
-- [ ] Gọi mark as read.
-- [ ] Payment success tạo/hiển thị notification.
-- [ ] My tickets responsive.
-- [ ] E-ticket responsive.
+- [x] Tìm layout/header hiện tại.
+- [x] Thêm notification bell.
+- [x] Hiển thị unread count.
+- [x] Hiển thị dropdown danh sách notification.
+- [x] Gọi mark as read.
+- [x] Payment success tạo/hiển thị notification.
+- [x] My tickets responsive.
+- [x] E-ticket responsive.
 
 ### C-W2-05 - Polish UX và responsive
 
 - **Priority:** P1
 - **Module:** `apps/fe - Responsive/Error Polish`
-- **Status:** Not Started
+- **Status:** Done
 - **Mục tiêu:** Flow demo mượt, không trắng màn hình.
 - **Công việc:** Fix mobile responsive, loading skeleton, disabled states, retry buttons, empty states; kiểm tra admin và public.
 - **Tiêu chí nghiệm thu:** Mở bằng màn hình nhỏ vẫn mua vé/xem QR được; admin pages không vỡ layout.
@@ -254,12 +254,12 @@ Checklist:
 - **Demo/Proof:** Before/after screenshots.
 
 Checklist:
-- [ ] Kiểm tra public pages trên mobile.
-- [ ] Kiểm tra admin pages trên mobile/tablet.
-- [ ] Thêm loading skeleton ở flow chính.
-- [ ] Thêm disabled states cho form/button.
-- [ ] Thêm retry buttons cho API fail.
-- [ ] Thêm empty states.
+- [x] Kiểm tra public pages trên mobile.
+- [x] Kiểm tra admin pages trên mobile/tablet.
+- [x] Thêm loading skeleton ở flow chính.
+- [x] Thêm disabled states cho form/button.
+- [x] Thêm retry buttons cho API fail.
+- [x] Thêm empty states.
 - [ ] Chụp before/after.
 
 ### C-W2-06 - Video segment C

@@ -16,8 +16,8 @@ export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('minhanh@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -114,6 +114,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            placeholder="email@example.com"
             className="h-11 w-full rounded-2xl border border-border bg-background px-4 focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
         </div>
@@ -124,6 +125,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••"
             className="h-11 w-full rounded-2xl border border-border bg-background px-4 focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
         </div>

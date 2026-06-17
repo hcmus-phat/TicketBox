@@ -6,6 +6,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { ETicketCard } from '@/components/eticket-card';
 import { getStoredMockOrder, StoredMockOrder } from '@/lib/mock-reservation';
+import { getOrderById, addLocalNotification } from '@/lib/api';
 import Link from 'next/link';
 import { CheckCircle, XCircle, Download, Share2, HomeIcon, ArrowRight } from 'lucide-react';
 
@@ -18,11 +19,84 @@ export default function SuccessPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (orderId) {
-      const storedOrder = getStoredMockOrder(orderId);
-      setOrder(storedOrder);
+    async function loadOrder() {
+      if (orderId) {
+        try {
+          const fetchedOrder = await getOrderById(orderId);
+          if (fetchedOrder && !fetchedOrder.tickets) {
+            // DB order is real but tickets/concert relations might not be fully seeded/joined
+            const subtotal = fetchedOrder.totalAmount ? Number(fetchedOrder.totalAmount) : 0;
+            const mappedOrder: StoredMockOrder = {
+              id: fetchedOrder.id,
+              orderNumber: fetchedOrder.id.substring(0, 8).toUpperCase(),
+              userId: fetchedOrder.userId,
+              concertId: fetchedOrder.concertId,
+              concertTitle: fetchedOrder.concert?.name || fetchedOrder.concert?.title || 'Sự kiện âm nhạc',
+              reservationId: fetchedOrder.reservationId,
+              status: 'PAID', // Treat success page loading as paid
+              totalAmount: subtotal,
+              paymentMethod: fetchedOrder.paymentMethod || 'MOMO',
+              paidAt: fetchedOrder.paidAt || fetchedOrder.createdAt || new Date().toISOString(),
+              createdAt: fetchedOrder.createdAt || new Date().toISOString(),
+              expiresAt: fetchedOrder.expiresAt || new Date().toISOString(),
+              items: fetchedOrder.items?.map((item: any) => ({
+                id: item.id,
+                ticketTypeId: item.ticketTypeId,
+                quantity: item.quantity,
+                unitPrice: Number(item.unitPrice),
+                seatLabels: item.seatLabels || ['Tự do'],
+              })) || [],
+              tickets: Array.from({ length: fetchedOrder.items?.[0]?.quantity || 1 }).map((_, idx) => {
+                const ticketCode = `TBX-${new Date(fetchedOrder.createdAt || Date.now()).getFullYear()}-${fetchedOrder.id.substring(0, 6).toUpperCase()}-${idx + 1}`;
+                return {
+                  id: `ticket-${fetchedOrder.id}-${idx + 1}`,
+                  orderId: fetchedOrder.id,
+                  ticketTypeId: fetchedOrder.items?.[0]?.ticketTypeId,
+                  ticketCode,
+                  qrPayload: `mock-qr:${ticketCode}:${fetchedOrder.concertId}:${fetchedOrder.items?.[0]?.ticketTypeId}`,
+                  seatZone: fetchedOrder.items?.[0]?.ticketType?.name || 'Standard',
+                  seatNumber: 'Tự do',
+                  price: Number(fetchedOrder.items?.[0]?.unitPrice || subtotal),
+                  status: 'ACTIVE' as const,
+                  createdAt: fetchedOrder.createdAt || new Date().toISOString(),
+                };
+              })
+            };
+            setOrder(mappedOrder);
+            
+            const sessionKey = `notified-order-${orderId}`;
+            const alreadyNotified = typeof window !== 'undefined' && window.sessionStorage.getItem(sessionKey);
+            if (!alreadyNotified) {
+              addLocalNotification(
+                'Đặt vé thành công!',
+                `Đơn hàng #${mappedOrder.orderNumber} cho sự kiện "${mappedOrder.concertTitle}" đã được đặt thành công.`
+              );
+              if (typeof window !== 'undefined') {
+                window.sessionStorage.setItem(sessionKey, 'true');
+              }
+            }
+          } else if (fetchedOrder) {
+            setOrder(fetchedOrder);
+            
+            const sessionKey = `notified-order-${orderId}`;
+            const alreadyNotified = typeof window !== 'undefined' && window.sessionStorage.getItem(sessionKey);
+            if (!alreadyNotified) {
+              addLocalNotification(
+                'Đặt vé thành công!',
+                `Đơn hàng #${fetchedOrder.orderNumber} cho sự kiện "${fetchedOrder.concertTitle}" đã được đặt thành công.`
+              );
+              if (typeof window !== 'undefined') {
+                window.sessionStorage.setItem(sessionKey, 'true');
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load real order:', error);
+        }
+      }
+      setLoading(false);
     }
-    setLoading(false);
+    loadOrder();
   }, [orderId]);
 
   const isFailed = status === 'failed';

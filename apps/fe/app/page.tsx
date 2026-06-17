@@ -1,7 +1,7 @@
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { ConcertBrowser } from '@/components/concert-browser';
-import { NewsletterSignup } from '@/components/newsletter-signup';
+import { HomeBanner } from '@/components/home-banner';
 import { getConcerts } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -91,15 +91,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <ConcertBrowser concerts={concerts} initialKeyword={initialKeyword} />
 
-      <section className="mx-auto max-w-7xl px-4 py-10">
-        <div className="grid gap-8 rounded-[2rem] bg-foreground p-6 text-background md:grid-cols-[1fr_0.9fr] md:p-10">
-          <div>
-            <h2 className="max-w-xl text-3xl font-black tracking-tight md:text-4xl">Nhận thông báo khi show mới mở bán</h2>
-            <p className="mt-3 max-w-lg text-background/65">Theo dõi lịch mở bán theo nghệ sĩ và thành phố bạn quan tâm.</p>
-          </div>
-          <NewsletterSignup />
-        </div>
-      </section>
+      <HomeBanner />
 
       <Footer />
     </main>
