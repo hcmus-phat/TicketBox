@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogIn, UserPlus } from 'lucide-react';
-import { loginMock, registerMock } from '@/lib/mock-auth';
+import { login, register, getFriendlyErrorMessage } from '@/lib/api';
 
 type AuthMode = 'login' | 'register';
 
@@ -16,8 +16,8 @@ export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('minhanh@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,7 +39,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     return '';
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const validationMessage = validate();
@@ -53,14 +53,16 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (isLogin) {
-        loginMock(email, password);
+        await login({ email, password });
       } else {
-        registerMock({ email, password, fullName, phone });
+        await register({ email, password, fullName, phone });
+        // Auto-login after register
+        await login({ email, password });
       }
 
       router.push('/');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể xử lý yêu cầu.');
+      setMessage(getFriendlyErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -77,8 +79,8 @@ export function AuthForm({ mode }: AuthFormProps) {
         </h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           {isLogin
-            ? 'Dùng tài khoản mock để tiếp tục đặt vé. Tài khoản mẫu: minhanh@example.com / password123.'
-            : 'Tài khoản được lưu cục bộ trong trình duyệt để mô phỏng API đăng ký.'}
+            ? 'Đăng nhập để đặt vé và trải nghiệm các tính năng của hệ thống.'
+            : 'Tạo tài khoản mới để bắt đầu.'}
         </p>
       </div>
 
@@ -112,6 +114,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            placeholder="email@example.com"
             className="h-11 w-full rounded-2xl border border-border bg-background px-4 focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
         </div>
@@ -122,6 +125,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••"
             className="h-11 w-full rounded-2xl border border-border bg-background px-4 focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
         </div>

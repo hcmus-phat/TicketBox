@@ -1,4 +1,5 @@
 import { Edit, Trash2, Eye } from 'lucide-react';
+import Link from 'next/link';
 
 interface ConcertTableProps {
   concerts: Array<{
@@ -38,7 +39,21 @@ export function ConcertTable({ concerts }: ConcertTableProps) {
               <td className="px-6 py-3 text-muted-foreground">{concert.venue}</td>
               <td className="px-6 py-3 text-muted-foreground">{concert.capacity.toLocaleString('vi-VN')}</td>
               <td className="px-6 py-3">
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                <span
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold border ${
+                    concert.status === 'Đang bán'
+                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                      : concert.status === 'Sắp hết vé'
+                      ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                      : concert.status === 'Hết vé'
+                      ? 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                      : concert.status === 'Đã kết thúc'
+                      ? 'bg-muted text-muted-foreground border-muted-foreground/10'
+                      : concert.status === 'Đã hủy'
+                      ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : 'bg-primary/10 text-primary border-primary/20'
+                  }`}
+                >
                   {concert.status ?? 'Đang bán'}
                 </span>
               </td>
@@ -47,9 +62,9 @@ export function ConcertTable({ concerts }: ConcertTableProps) {
                   <button className="rounded-full p-2 text-muted-foreground transition hover:bg-primary/10 hover:text-primary" aria-label="Xem sự kiện">
                     <Eye className="size-4" />
                   </button>
-                  <button className="rounded-full p-2 text-muted-foreground transition hover:bg-primary/10 hover:text-primary" aria-label="Sửa sự kiện">
+                  <Link href={`/admin/concerts/${concert.id}`} className="rounded-full p-2 text-muted-foreground transition hover:bg-primary/10 hover:text-primary" aria-label="Sửa sự kiện">
                     <Edit className="size-4" />
-                  </button>
+                  </Link>
                   <button className="rounded-full p-2 text-destructive transition hover:bg-destructive/10" aria-label="Xóa sự kiện">
                     <Trash2 className="size-4" />
                   </button>

@@ -13,7 +13,7 @@ async function bootstrap() {
     : ['log', 'debug', 'error', 'warn', 'verbose'],
   });
   app.enableCors({
-    origin: '*',
+    origin: true,
     credentials: true,
   });
   app.enableShutdownHooks();

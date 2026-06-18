@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { ToastContainer } from '@/components/toast-container'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({
@@ -44,6 +45,8 @@ export const metadata: Metadata = {
   },
 }
 
+import Script from 'next/script'
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,8 +55,8 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground">
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}
+        <ToastContainer />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

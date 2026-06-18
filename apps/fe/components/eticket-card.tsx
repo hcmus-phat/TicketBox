@@ -31,14 +31,14 @@ export function ETicketCard({
   });
 
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-dashed border-primary/55 bg-card shadow-xl shadow-foreground/5">
+    <div className="overflow-hidden rounded-[2rem] border border-dashed border-primary/55 bg-card shadow-xl shadow-foreground/5 max-w-full">
       <div className="border-b border-dashed border-primary/30 bg-foreground p-6 text-background">
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 mb-2">
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-background/50">Mã vé</p>
-            <p className="font-mono font-bold text-primary">{ticketNumber}</p>
+            <p className="font-mono font-bold text-primary break-all">{ticketNumber}</p>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-background/50">Ngày mua</p>
             <p className="text-sm font-semibold text-background">{purchaseDate}</p>
           </div>
@@ -46,35 +46,35 @@ export function ETicketCard({
       </div>
 
       <div className="p-6">
-        <h3 className="mb-4 text-2xl font-black tracking-tight text-foreground">{concertTitle}</h3>
+        <h3 className="mb-4 text-xl sm:text-2xl font-black tracking-tight text-foreground">{concertTitle}</h3>
 
-        <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-primary/20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 pb-6 border-b border-primary/20">
           <div>
             <p className="text-xs text-muted-foreground mb-1">Ngày</p>
-            <p className="font-semibold text-foreground">{formattedDate}</p>
+            <p className="font-semibold text-foreground text-sm sm:text-base">{formattedDate}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Giờ</p>
-            <p className="font-semibold text-foreground">{time}</p>
+            <p className="font-semibold text-foreground text-sm sm:text-base">{time}</p>
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <p className="text-xs text-muted-foreground mb-1">Địa điểm</p>
-            <p className="font-semibold text-foreground">{venue}</p>
+            <p className="font-semibold text-foreground text-sm sm:text-base">{venue}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6 pb-6 border-b border-primary/20">
+        <div className="grid grid-cols-1 min-[425px]:grid-cols-3 gap-4 mb-6 pb-6 border-b border-primary/20">
           <div>
             <p className="text-xs text-muted-foreground mb-1">Khu vực</p>
-            <p className="text-lg font-black text-primary">{seatZone}</p>
+            <p className="text-base sm:text-lg font-black text-primary truncate" title={seatZone}>{seatZone}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Ghế</p>
-            <p className="text-lg font-black text-primary">{seatNumber}</p>
+            <p className="text-base sm:text-lg font-black text-primary">{seatNumber}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Giá</p>
-            <p className="text-lg font-black text-primary">{price.toLocaleString('vi-VN')}đ</p>
+            <p className="text-base sm:text-lg font-black text-primary">{price.toLocaleString('vi-VN')}đ</p>
           </div>
         </div>
 
@@ -87,12 +87,12 @@ export function ETicketCard({
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button className="flex-1 flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 font-bold text-primary-foreground transition hover:bg-primary/90 active:translate-y-px">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button className="flex-1 flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 font-bold text-primary-foreground transition hover:bg-primary/90 active:translate-y-px cursor-pointer">
             <Download className="w-4 h-4" />
             Tải xuống
           </button>
-          <button className="flex-1 flex items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2 font-bold text-foreground transition hover:border-primary/40 hover:text-primary active:translate-y-px">
+          <button className="flex-1 flex h-11 items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2 font-bold text-foreground transition hover:border-primary/40 hover:text-primary active:translate-y-px cursor-pointer">
             <Share2 className="w-4 h-4" />
             Chia sẻ
           </button>

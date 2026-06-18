@@ -28,7 +28,7 @@ export function ZoneInfoCard({ zone, isSelected, onSelect }: ZoneInfoCardProps) 
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{zone.description}</p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+        <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
           isSoldOut ? 'bg-destructive/15 text-destructive' : zone.status === 'limited' ? 'bg-[#e0a82e]/20 text-[#765514]' : 'bg-accent/10 text-accent'
         }`}>
           {isSoldOut ? 'Hết vé' : zone.status === 'limited' ? 'Sắp hết' : 'Còn vé'}

@@ -426,8 +426,9 @@ function toTicketZoneStatus(ticketType: MockTicketType): TicketZoneStatus {
 }
 
 export function getTicketZonesByConcertId(concertId: string): TicketZone[] {
+  const effectiveId = ['1', '2', '3', '4', '5', '6'].includes(concertId) ? concertId : '1';
   return mockTicketTypes
-    .filter((ticketType) => ticketType.concertId === concertId && ticketType.status !== 'HIDDEN')
+    .filter((ticketType) => ticketType.concertId === effectiveId && ticketType.status !== 'HIDDEN')
     .map((ticketType) => {
       const seatZone = mockSeatZones.find((zone) => zone.id === ticketType.seatZoneId)!;
 
@@ -449,14 +450,16 @@ export function getTicketZonesByConcertId(concertId: string): TicketZone[] {
 }
 
 function createZoneSeats(concertId: string, zoneCode: string, rowNames: string[], seatsPerRow: number): Seat[] {
-  const seatZone = mockSeatZones.find((zone) => zone.concertId === concertId && zone.code === zoneCode)!;
+  const effectiveConcertId = ['1', '2', '3', '4', '5', '6'].includes(concertId) ? concertId : '1';
+  const seatZone = mockSeatZones.find((zone) => zone.concertId === effectiveConcertId && zone.code === zoneCode)!;
   const seats: Seat[] = [];
 
   rowNames.forEach((row, rowIndex) => {
     for (let number = 1; number <= seatsPerRow; number += 1) {
       const isOuterDisabled = rowIndex === rowNames.length - 1 && (number <= 2 || number >= seatsPerRow - 1);
-      const isSold = (rowIndex + number + Number(concertId)) % 9 === 0 || (rowIndex === 1 && number >= 7 && number <= 9);
-      const isHeld = (rowIndex + number + Number(concertId)) % 13 === 0 || (rowIndex === 3 && number === 12);
+      const numericConcertId = parseInt(concertId.replace(/[^0-9]/g, ''), 10) || 1;
+      const isSold = (rowIndex + number + numericConcertId) % 9 === 0 || (rowIndex === 1 && number >= 7 && number <= 9);
+      const isHeld = (rowIndex + number + numericConcertId) % 13 === 0 || (rowIndex === 3 && number === 12);
 
       seats.push({
         id: `seat-${concertId}-${zoneCode}-${row}-${number}`,
@@ -496,16 +499,18 @@ function getTimeFromEventDate(eventDate: string): string {
 }
 
 function getLowestPrice(concertId: string): number {
+  const effectiveId = ['1', '2', '3', '4', '5', '6'].includes(concertId) ? concertId : '1';
   return Math.min(
     ...mockTicketTypes
-      .filter((ticketType) => ticketType.concertId === concertId)
+      .filter((ticketType) => ticketType.concertId === effectiveId)
       .map((ticketType) => ticketType.price),
   );
 }
 
 function isConcertSoldOut(concertId: string): boolean {
+  const effectiveId = ['1', '2', '3', '4', '5', '6'].includes(concertId) ? concertId : '1';
   return mockTicketTypes
-    .filter((ticketType) => ticketType.concertId === concertId)
+    .filter((ticketType) => ticketType.concertId === effectiveId)
     .every((ticketType) => ticketType.status === 'SOLD_OUT' || ticketType.remaining === 0);
 }
 
@@ -633,25 +638,18 @@ export const mockTickets: MockTicket[] = [
 
 export const paymentMethods = [
   {
-    id: 'card',
-    gateway: 'CARD' as PaymentMethod,
-    name: 'Thẻ tín dụng / ghi nợ',
-    description: 'Visa, Mastercard, JCB',
-    icon: 'CreditCard',
-  },
-  {
-    id: 'bank',
-    gateway: 'BANK_TRANSFER' as PaymentMethod,
-    name: 'Chuyển khoản ngân hàng',
-    description: 'QR ngân hàng, xác nhận tự động',
-    icon: 'Building2',
-  },
-  {
-    id: 'wallet',
+    id: 'momo',
     gateway: 'WALLET' as PaymentMethod,
-    name: 'Ví điện tử',
-    description: 'MoMo, ZaloPay, VNPay',
+    name: 'Ví MoMo',
+    description: 'Thanh toán nhanh qua ứng dụng MoMo',
     icon: 'Wallet',
+  },
+  {
+    id: 'vnpay',
+    gateway: 'WALLET' as PaymentMethod,
+    name: 'VNPAY',
+    description: 'Quét mã QR qua ứng dụng ngân hàng',
+    icon: 'Building2',
   },
 ];
 

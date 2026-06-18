@@ -111,6 +111,9 @@ importers:
       '@types/passport-jwt':
         specifier: ^4.0.1
         version: 4.0.1
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
       prisma:
         specifier: ^7.8.0
         version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
@@ -7242,7 +7245,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.19.21
+      '@types/node': 24.13.2
 
   '@types/emscripten@1.41.5': {}
 
@@ -7312,7 +7315,7 @@ snapshots:
 
   '@types/oauth@0.9.6':
     dependencies:
-      '@types/node': 22.19.21
+      '@types/node': 24.13.2
 
   '@types/passport-google-oauth20@2.0.17':
     dependencies:
@@ -7342,7 +7345,7 @@ snapshots:
 
   '@types/pg@8.20.0':
     dependencies:
-      '@types/node': 22.19.21
+      '@types/node': 24.13.2
       pg-protocol: 1.14.0
       pg-types: 2.2.0
 
@@ -7360,7 +7363,7 @@ snapshots:
 
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 22.19.21
+      '@types/node': 24.13.2
 
   '@types/serve-static@2.2.0':
     dependencies:
@@ -8927,7 +8930,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 22.19.21
+      '@types/node': 24.13.2
       merge-stream: 2.0.0
       supports-color: 8.1.1
 

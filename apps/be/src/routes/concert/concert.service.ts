@@ -123,12 +123,25 @@ export class ConcertService {
       return cached;
     }
 
-    const concert = await this.findConcertOrThrow(id);
+    const concert = await this.prismaService.concert.findUnique({
+      where: { id },
+      include: {
+        seatZones: {
+          include: {
+            ticketTypes: true
+          }
+        }
+      }
+    });
+
+    if (!concert) {
+      throw new NotFoundException('Concert not found');
+    }
+
     const response = this.toResponse(concert);
 
     await this.setCache(cacheKey, response);
 
-    // TODO: include ticketTypes or related data only through owning modules when needed.
     return response;
   }
 

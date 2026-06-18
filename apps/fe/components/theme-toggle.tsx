@@ -49,7 +49,7 @@ export function ThemeToggle({ inverse = false }: { inverse?: boolean }) {
       title={isDark ? 'Chế độ sáng' : 'Chế độ tối'}
       className={
         inverse
-          ? 'grid size-10 place-items-center rounded-full border border-sidebar-border bg-sidebar-accent text-sidebar-foreground transition hover:border-primary hover:text-primary'
+          ? 'grid size-10 place-items-center rounded-full border border-sidebar-border text-sidebar-foreground transition hover:border-primary hover:text-primary'
           : 'grid size-10 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition hover:border-primary/40 hover:text-primary'
       }
     >
