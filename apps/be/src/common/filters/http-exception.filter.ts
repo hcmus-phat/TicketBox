@@ -23,6 +23,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getResponse() : null;
 
     let message: string | string[] = 'Internal server error';
+    let errors: unknown;
 
     if (typeof exceptionResponse === 'string') {
       message = exceptionResponse;
@@ -32,11 +33,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const res = exceptionResponse as any;
 
       message = res.message || res.error || message;
+      errors = res.errors;
     }
 
     response.status(statusCode).json({
       success: false,
       message,
+      ...(errors ? { errors } : {}),
       metadata: {
         statusCode,
         method: request.method,

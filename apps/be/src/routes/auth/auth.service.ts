@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma';
 import { HashService } from '../../common/crypto/hash.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { TokenService } from './token/token.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './types/jwt-payload.type';
 import { authUserInclude } from './types/auth-user.types';
 import { UserResponseDto } from './dto/user-response.dto';
+import { AuthCacheService } from './auth-cache.service';
 
 
 @Injectable()
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly prismaService: PrismaService,
     private readonly hashService: HashService,
+    private readonly authCacheService: AuthCacheService,
   ) {}
   async register(registerDto: RegisterDto) {
     const { password, ...userData } = registerDto;
@@ -51,6 +53,7 @@ export class AuthService {
           password: true,
         },
       });
+      await this.authCacheService.invalidateUser(user.id);
       return new UserResponseDto(user);
     } catch (error: any) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -75,6 +78,8 @@ export class AuthService {
     }
     const payload: JwtPayload = { sub: authUser.id, email: authUser.email };
     const token = await this.generateTokens(payload);
+    await this.authCacheService.setUser(new UserResponseDto(authUser));
+
     return {
       user: new UserResponseDto(authUser),
       ...token,
@@ -110,6 +115,7 @@ export class AuthService {
 
     const tokenPayload: JwtPayload = { sub: user.id, email: user.email };
     const token = await this.generateTokens(tokenPayload);
+    await this.authCacheService.setUser(new UserResponseDto(user));
 
     return {
       user: new UserResponseDto(user),

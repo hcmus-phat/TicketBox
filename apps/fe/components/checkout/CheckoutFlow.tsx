@@ -100,12 +100,8 @@ export function CheckoutFlow() {
 
       const orderResponse = await createOrder({
         concertId: checkout.concertId,
-        items: [
-          {
-            ticketTypeId: checkout.ticketTypeId,
-            quantity: checkout.quantity,
-          }
-        ]
+        ticketTypeId: checkout.ticketTypeId,
+        seatNumbers: checkout.selectedSeats,
       }, idempotencyKey);
 
       const orderId = orderResponse.orderId || orderResponse.data?.orderId;
