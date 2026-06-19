@@ -438,6 +438,8 @@ model Order {
 
   paidAt    DateTime? @map("paid_at") @db.Timestamptz(6)
   expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  paymentGraceUntil DateTime? @map("payment_grace_until") @db.Timestamptz(6)
+  releasedAt DateTime? @map("released_at") @db.Timestamptz(6)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   user        User        @relation(fields: [userId], references: [id])
@@ -450,6 +452,8 @@ model Order {
 
   @@index([userId])
   @@index([status, expiresAt])
+  @@index([status, paymentGraceUntil])
+  @@index([releasedAt])
   @@map("orders")
 }
 

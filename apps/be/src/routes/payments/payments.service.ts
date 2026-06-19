@@ -21,6 +21,7 @@ import {
   TicketResponseDto,
 } from './dto/payment-status-response.dto';
 import { AuthUser } from '../auth/dto/user-response.dto';
+import { getPaymentGraceUntil } from '../orders/order-expiration.constants';
 import {
   IdempotencyStatus,
   NotificationChannel,
@@ -150,6 +151,8 @@ export class PaymentsService {
       }
 
       const paymentRef = this.gateway.generatePaymentRef(dto.provider as Provider);
+      const paymentGraceUntil =
+        order.paymentGraceUntil ?? getPaymentGraceUntil(order.expiresAt);
 
       const updated = await tx.order.update({
         where: { id: order.id },
@@ -157,6 +160,7 @@ export class PaymentsService {
           status: OrderStatus.PAYMENT_PROCESSING,
           paymentMethod: dto.provider as any,
           paymentRef,
+          paymentGraceUntil,
         },
       });
 
@@ -327,6 +331,7 @@ export class PaymentsService {
         amount,
         currency: query['vnp_CurrCode'] ?? 'VND',
         signature: query['vnp_SecureHash'],
+        gatewayPaidAt: query['vnp_PayDate'],
       };
 
       const result = await this.handleWebhook(provider, mockDto, 'GATEWAY_VERIFIED');
@@ -365,6 +370,7 @@ export class PaymentsService {
           },
         },
       });
+      const gatewayPaidAt = this.getGatewayPaidAt(dto);
 
       if (order.status === OrderStatus.PAID) {
         this.logger.warn(`SUCCESS webhook for already PAID order: ${order.id}`);
@@ -410,14 +416,27 @@ export class PaymentsService {
         });
       }
 
-      const now = new Date();
+      if (gatewayPaidAt && gatewayPaidAt.getTime() > order.expiresAt.getTime()) {
+        this.logger.error(
+          `SUCCESS webhook for order ${order.id} was paid after expiresAt. gatewayPaidAt=${gatewayPaidAt.toISOString()}, expiresAt=${order.expiresAt.toISOString()}`,
+        );
+        await this.txHelper.releaseOrder(
+          tx as any,
+          order.id,
+          OrderStatus.REFUND_REQUIRED,
+          ReservationStatus.CANCELLED,
+        );
+        return { status: OrderStatus.REFUND_REQUIRED, issuedTickets: false };
+      }
+
+      const paidAt = gatewayPaidAt ?? new Date();
 
       // Update Order → PAID
       await tx.order.update({
         where: { id: order.id },
         data: {
           status: OrderStatus.PAID,
-          paidAt: now,
+          paidAt,
         },
       });
 
@@ -517,6 +536,77 @@ export class PaymentsService {
         status: NotificationStatus.PENDING,
       },
     });
+  }
+
+  private getGatewayPaidAt(dto: PaymentWebhookDto): Date | null {
+    const payload = dto as PaymentWebhookDto & Record<string, unknown>;
+    const candidates = [
+      payload.gatewayPaidAt,
+      payload.paidAt,
+      payload.responseTime,
+      payload.transTime,
+      payload.transactionTime,
+    ];
+
+    for (const candidate of candidates) {
+      const parsed = this.parseGatewayTimestamp(candidate);
+      if (parsed) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  private parseGatewayTimestamp(value: unknown): Date | null {
+    if (value === undefined || value === null || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return this.dateFromEpoch(value);
+    }
+
+    const raw = String(value).trim();
+    if (!raw) {
+      return null;
+    }
+
+    if (/^\d{14}$/.test(raw)) {
+      return this.parseVnpayPayDate(raw);
+    }
+
+    if (/^\d+$/.test(raw)) {
+      return this.dateFromEpoch(Number(raw));
+    }
+
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private dateFromEpoch(value: number): Date | null {
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+
+    const milliseconds = value < 1_000_000_000_000 ? value * 1000 : value;
+    const parsed = new Date(milliseconds);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private parseVnpayPayDate(value: string): Date | null {
+    const year = Number(value.slice(0, 4));
+    const month = Number(value.slice(4, 6));
+    const day = Number(value.slice(6, 8));
+    const hour = Number(value.slice(8, 10));
+    const minute = Number(value.slice(10, 12));
+    const second = Number(value.slice(12, 14));
+
+    const parsed = new Date(
+      Date.UTC(year, month - 1, day, hour - 7, minute, second),
+    );
+
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
