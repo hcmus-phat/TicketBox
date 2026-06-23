@@ -145,4 +145,50 @@ export class CheckinService {
 
     return { results };
   }
+
+  async getSnapshot(concertId: string) {
+    const tickets = await this.prisma.ticket.findMany({
+      where: {
+        concertId,
+        status: {
+          in: ['ACTIVE', 'USED'],
+        },
+      },
+      include: {
+        ticketType: true,
+        owner: true,
+      },
+    });
+
+    const guests = await this.prisma.guestList.findMany({
+      where: {
+        concertId,
+        status: {
+          in: ['ACTIVE', 'CHECKED_IN'],
+        },
+      },
+    });
+
+    const ticketSecret = this.config.get<string>('JWT_TICKET_SECRET', 'ticket-secret');
+    const version = Date.now().toString();
+
+    return {
+      version,
+      publicKey: ticketSecret,
+      tickets: tickets.map((t) => ({
+        id: t.id,
+        ticketCode: t.ticketCode,
+        status: t.status,
+        guestName: t.owner?.fullName || 'Khách Hàng',
+        ticketType: t.ticketType?.name || '---',
+      })),
+      guests: guests.map((g) => ({
+        id: g.id,
+        guestCode: g.guestCode,
+        fullName: g.fullName,
+        email: g.email || null,
+        status: g.status,
+      })),
+    };
+  }
 }

@@ -96,6 +96,26 @@ export interface SyncResultItem {
   serverId: string;
 }
 
+/** Snapshot response */
+export interface SnapshotResponse {
+  version: string;
+  publicKey: string;
+  tickets: {
+    id: string;
+    ticketCode: string;
+    status: string;
+    guestName: string;
+    ticketType: string;
+  }[];
+  guests: {
+    id: string;
+    guestCode: string;
+    fullName: string;
+    email: string | null;
+    status: string;
+  }[];
+}
+
 /** Navigation params */
 export type RootStackParamList = {
   Login: undefined;

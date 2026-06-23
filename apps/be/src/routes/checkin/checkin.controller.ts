@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Get, Param } from '@nestjs/common';
 import { CheckinService } from './checkin.service';
 import { ScanCheckinDto } from './dto/scan-checkin.dto';
 import { SyncCheckinDto } from './dto/sync-checkin.dto';
@@ -26,5 +26,11 @@ export class CheckinController {
     // For sync, we might trust the array of items' staffIds or override them.
     // Given the task, we just secure the endpoint.
     return this.checkinService.sync(dto);
+  }
+
+  @Get('events/:concertId/snapshot')
+  @Roles('checker', 'admin')
+  async getSnapshot(@Param('concertId') concertId: string) {
+    return this.checkinService.getSnapshot(concertId);
   }
 }
