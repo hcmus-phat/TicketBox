@@ -46,6 +46,7 @@ jobs:
 
     env:
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/nest_prisma_db?schema=public"
+      MIGRATION_DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/nest_prisma_db?schema=public"
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       PORT: 3000
