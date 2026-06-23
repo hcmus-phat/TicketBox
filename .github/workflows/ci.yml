@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Cancel in-progress runs when a new commit is pushed to the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-build-and-test:
+    name: Lint, Build, and Integration Test (Postman)
+    runs-on: ubuntu-latest
+
+    # Setup PostgreSQL and Redis services required by the NestJS backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nest_prisma_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/nest_prisma_db?schema=public"
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      PORT: 3000
+      NODE_ENV: development
+      JWT_ACCESS_SECRET: "ticketbox_access_token_secret_dev_2026"
+      JWT_ACCESS_EXPIRES_IN: "15m"
+      JWT_REFRESH_SECRET: "ticketbox_refresh_token_secret_dev_2026"
+      JWT_REFRESH_EXPIRES_IN: "7d"
+      JWT_TICKET_SECRET: "ticketbox_ticket_token_secret_dev_2026"
+      MOCK_VNPAY_SECRET: "mock-vnpay-secret"
+      MOCK_MOMO_SECRET: "mock-momo-secret"
+      SEED_ADMIN_EMAIL: "admin@gmail.com"
+      SEED_ADMIN_PASSWORD: "123456"
+      SEED_ADMIN_FULL_NAME: "System Admin"
+      # MinIO/S3 configuration
+      AWS_ACCESS_KEY_ID: "AKIAVUCD3WIXHSO4ZJQW"
+      AWS_SECRET_ACCESS_KEY: "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"
+      AWS_S3_REGION: "ap-southeast-1"
+      AWS_S3_BUCKET: "my-tickbox-app-0322"
+      AWS_S3_ENDPOINT: "http://localhost:9000"
+      AWS_S3_FORCE_PATH_STYLE: "true"
+      # Gemini API configuration for AI test cases
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start MinIO Server (S3 storage)
+        run: |
+          docker run -d -p 9000:9000 --name minio \
+            -e "MINIO_ROOT_USER=AKIAVUCD3WIXHSO4ZJQW" \
+            -e "MINIO_ROOT_PASSWORD=zZ+5RdJMgTV2VMwb+Win4AIWti23SpN8TZQGRxAd" \
+            minio/minio server /data
+          echo "Waiting for MinIO to start..."
+          npx wait-on http://localhost:9000/minio/health/live -t 30000
+
+      - name: Create MinIO S3 Bucket
+        run: |
+          aws --endpoint-url http://localhost:9000 s3 mb s3://my-tickbox-app-0322
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @repo/be run migrate:gen
+
+      - name: Run Linter
+        run: pnpm run lint
+        continue-on-error: true # Set to true since the project's linter is currently missing configs. Change to false once ESLint is set up.
+
+      - name: Run Build
+        run: pnpm run build
+
+      - name: Run Database Migrations
+        run: pnpm --filter @repo/be run migrate:deploy
+
+      - name: Seed Database
+        run: pnpm --filter @repo/be run db:seed
+
+      - name: Start NestJS Backend API
+        run: |
+          pnpm --filter @repo/be run start:api &
+          echo "Waiting for API backend to listen on port 3000..."
+          npx wait-on http://localhost:3000/health -t 30000
+
+      - name: Run Postman Integration Tests (Newman)
+        run: |
+          npx newman run apps/be/ticketbox.postman_collection.json --env-var "baseUrl=http://localhost:3000"

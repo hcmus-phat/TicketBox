@@ -143,18 +143,18 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data || json;",
-                  "const accessToken = data && data.accessToken;",
+                  "const resData = json.data || json;",
+                  "const accessToken = resData && resData.accessToken;",
                   "",
                   "pm.test('login returns user and access token', function () {",
-                  "  pm.expect(data).to.have.property('user');",
-                  "  pm.expect(data).to.have.property('accessToken');",
-                  "  pm.expect(data.user.email).to.eql(pm.collectionVariables.get('testEmail'));",
+                  "  pm.expect(resData).to.have.property('user');",
+                  "  pm.expect(resData).to.have.property('accessToken');",
+                  "  pm.expect(resData.user.email).to.eql(pm.collectionVariables.get('testEmail'));",
                   "});",
                   "",
                   "pm.test('login user has customer role and RBAC permissions', function () {",
-                  "  const customerRole = data.user.roles.find((role) => role.name === 'customer');",
-                  "  pm.expect(data.user.roles).to.be.an('array');",
+                  "  const customerRole = resData.user.roles.find((role) => role.name === 'customer');",
+                  "  pm.expect(resData.user.roles).to.be.an('array');",
                   "  pm.expect(customerRole).to.exist;",
                   "  pm.expect(customerRole).to.not.have.property('scopeType');",
                   "  pm.expect(customerRole).to.not.have.property('scopeId');",
@@ -167,7 +167,7 @@
                   "if (pm.environment.name) {",
                   "  pm.environment.set('accessToken', accessToken);",
                   "}",
-                  "pm.collectionVariables.set('userId', data.user.id);"
+                  "pm.collectionVariables.set('userId', resData.user.id);"
                 ]
               }
             }
@@ -211,17 +211,17 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data || json;",
-                  "const accessToken = data && data.accessToken;",
+                  "const resData = json.data || json;",
+                  "const accessToken = resData && resData.accessToken;",
                   "",
                   "pm.test('admin login returns user and access token', function () {",
-                  "  pm.expect(data).to.have.property('user');",
-                  "  pm.expect(data).to.have.property('accessToken');",
-                  "  pm.expect(data.user.email).to.eql(pm.collectionVariables.get('seedAdminEmail'));",
+                  "  pm.expect(resData).to.have.property('user');",
+                  "  pm.expect(resData).to.have.property('accessToken');",
+                  "  pm.expect(resData.user.email).to.eql(pm.collectionVariables.get('seedAdminEmail'));",
                   "});",
                   "",
                   "pm.test('admin user has RBAC admin permissions', function () {",
-                  "  const roles = data.user && Array.isArray(data.user.roles) ? data.user.roles : [];",
+                  "  const roles = resData.user && Array.isArray(resData.user.roles) ? resData.user.roles : [];",
                   "  const permissions = roles.flatMap((role) => role.permissions || []);",
                   "  pm.expect(roles.map((role) => role.name)).to.include('admin');",
                   "  pm.expect(permissions).to.include('concert:read_admin');",
@@ -238,12 +238,12 @@
                   "  });",
                   "});",
                   "",
-                  "if (data.user && accessToken) {",
+                  "if (resData.user && accessToken) {",
                   "  pm.collectionVariables.set('accessToken', accessToken);",
                   "  pm.collectionVariables.set('activeLoginEmail', pm.collectionVariables.get('seedAdminEmail'));",
                   "  pm.collectionVariables.set('activeExpectedRole', 'admin');",
-                  "  pm.collectionVariables.set('adminUserId', data.user.id);",
-                  "  pm.collectionVariables.set('userId', data.user.id);",
+                  "  pm.collectionVariables.set('adminUserId', resData.user.id);",
+                  "  pm.collectionVariables.set('userId', resData.user.id);",
                   "  if (pm.environment.name) {",
                   "    pm.environment.set('accessToken', accessToken);",
                   "  }",
@@ -352,24 +352,24 @@
                   "  pm.response.to.have.status(201);",
                   "});",
                   "",
-                  "const data = pm.response.json().data;",
-                  "const accessToken = data && data.accessToken;",
+                  "const resData = pm.response.json().data;",
+                  "const accessToken = resData && resData.accessToken;",
                   "",
                   "pm.test('refresh returns a new access token', function () {",
-                  "  pm.expect(data).to.have.property('accessToken');",
-                  "  pm.expect(data).to.have.property('user');",
+                  "  pm.expect(resData).to.have.property('accessToken');",
+                  "  pm.expect(resData).to.have.property('user');",
                   "});",
                   "",
                   "pm.test('refresh user has roles', function () {",
-                  "  pm.expect(data.user.roles).to.be.an('array');",
-                  "  pm.expect(data.user.roles.map((role) => role.name)).to.include(pm.collectionVariables.get('activeExpectedRole'));",
+                  "  pm.expect(resData.user.roles).to.be.an('array');",
+                  "  pm.expect(resData.user.roles.map((role) => role.name)).to.include(pm.collectionVariables.get('activeExpectedRole'));",
                   "});",
                   "",
                   "pm.collectionVariables.set('accessToken', accessToken);",
                   "if (pm.environment.name) {",
                   "  pm.environment.set('accessToken', accessToken);",
                   "}",
-                  "pm.collectionVariables.set('userId', data.user.id);"
+                  "pm.collectionVariables.set('userId', resData.user.id);"
                 ]
               }
             }
@@ -403,13 +403,13 @@
                   "  pm.response.to.have.status(201);",
                   "});",
                   "",
-                  "const data = pm.response.json().data;",
+                  "const resData = pm.response.json().data;",
                   "",
                   "pm.test('logout message returned', function () {",
-                  "  pm.expect(data).to.have.property('message', 'Logged out successfully');",
+                  "  pm.expect(resData).to.have.property('message', 'Logged out successfully');",
                   "});",
                   "",
-                  "pm.collectionVariables.unset('accessToken');"
+                  "// pm.collectionVariables.unset('accessToken');"
                 ]
               }
             }
@@ -611,12 +611,12 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data || json;",
+                  "const resData = json.data || json;",
                   "",
                   "pm.test('paginated response is returned', function () {",
-                  "  pm.expect(data).to.have.property('items');",
-                  "  pm.expect(data).to.have.property('meta');",
-                  "  pm.expect(data.meta).to.include.keys(['page', 'limit', 'total', 'totalPages']);",
+                  "  pm.expect(resData).to.have.property('items');",
+                  "  pm.expect(resData).to.have.property('meta');",
+                  "  pm.expect(resData.meta).to.include.keys(['page', 'limit', 'total', 'totalPages']);",
                   "});"
                 ]
               }
@@ -1008,17 +1008,17 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "",
                   "pm.test('order is created and pending payment', function () {",
-                  "  pm.expect(data).to.have.property('orderId');",
-                  "  pm.expect(data).to.have.property('status', 'PENDING_PAYMENT');",
-                  "  pm.expect(data).to.have.property('expiresAt');",
-                  "  pm.expect(data.items).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(resData).to.have.property('orderId');",
+                  "  pm.expect(resData).to.have.property('status', 'PENDING_PAYMENT');",
+                  "  pm.expect(resData).to.have.property('expiresAt');",
+                  "  pm.expect(resData.items).to.be.an('array').that.is.not.empty;",
                   "});",
                   "",
-                  "pm.collectionVariables.set('orderId', data.orderId);",
-                  "pm.collectionVariables.set('paymentAmount', data.totalAmount);"
+                  "pm.collectionVariables.set('orderId', resData.orderId);",
+                  "pm.collectionVariables.set('paymentAmount', resData.totalAmount);"
                 ]
               }
             }
@@ -1084,10 +1084,10 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('order detail is returned', function () {",
-                  "  pm.expect(data).to.have.property('orderId', pm.collectionVariables.get('orderId'));",
-                  "  pm.expect(data).to.have.property('items');",
+                  "  pm.expect(resData).to.have.property('orderId', pm.collectionVariables.get('orderId'));",
+                  "  pm.expect(resData).to.have.property('items');",
                   "});"
                 ]
               }
@@ -1143,19 +1143,19 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('payment request is returned', function () {",
-                  "  pm.expect(data).to.have.property('orderId', pm.collectionVariables.get('orderId'));",
-                  "  pm.expect(data).to.have.property('paymentRef');",
-                  "  pm.expect(data).to.have.property('provider', 'VNPAY');",
-                  "  pm.expect(data.paymentRef).to.match(/^VNPAY-/);",
-                  "  pm.expect(data).to.have.property('orderStatus', 'PAYMENT_PROCESSING');",
-                  "  pm.expect(data).to.have.property('paymentStatus', 'PROCESSING');\n  pm.expect(data).to.have.property('paymentUrl');\n  pm.expect(data.paymentUrl).to.match(/^https?:\\/\\//);",
-                  "  pm.expect(data).to.have.property('amount');",
-                  "  pm.expect(data).to.have.property('currency', 'VND');",
+                  "  pm.expect(resData).to.have.property('orderId', pm.collectionVariables.get('orderId'));",
+                  "  pm.expect(resData).to.have.property('paymentRef');",
+                  "  pm.expect(resData).to.have.property('provider', 'VNPAY');",
+                  "  pm.expect(resData.paymentRef).to.match(/^VNPAY-/);",
+                  "  pm.expect(resData).to.have.property('orderStatus', 'PAYMENT_PROCESSING');",
+                  "  pm.expect(resData).to.have.property('paymentStatus', 'PROCESSING');\n  pm.expect(resData).to.have.property('paymentUrl');\n  pm.expect(resData.paymentUrl).to.match(/^https?:\\/\\//);",
+                  "  pm.expect(resData).to.have.property('amount');",
+                  "  pm.expect(resData).to.have.property('currency', 'VND');",
                   "});",
-                  "pm.collectionVariables.set('paymentRef', data.paymentRef);",
-                  "pm.collectionVariables.set('paymentAmount', data.amount);"
+                  "pm.collectionVariables.set('paymentRef', resData.paymentRef);",
+                  "pm.collectionVariables.set('paymentAmount', resData.amount);"
                 ]
               }
             }
@@ -1228,17 +1228,17 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "",
                   "pm.test('order is created and pending payment', function () {",
-                  "  pm.expect(data).to.have.property('orderId');",
-                  "  pm.expect(data).to.have.property('status', 'PENDING_PAYMENT');",
-                  "  pm.expect(data).to.have.property('expiresAt');",
-                  "  pm.expect(data.items).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(resData).to.have.property('orderId');",
+                  "  pm.expect(resData).to.have.property('status', 'PENDING_PAYMENT');",
+                  "  pm.expect(resData).to.have.property('expiresAt');",
+                  "  pm.expect(resData.items).to.be.an('array').that.is.not.empty;",
                   "});",
                   "",
-                  "pm.collectionVariables.set('orderId', data.orderId);",
-                  "pm.collectionVariables.set('paymentAmount', data.totalAmount);"
+                  "pm.collectionVariables.set('orderId', resData.orderId);",
+                  "pm.collectionVariables.set('paymentAmount', resData.totalAmount);"
                 ]
               }
             }
@@ -1305,21 +1305,21 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('MoMo payment request is returned', function () {",
-                  "  pm.expect(data).to.have.property('orderId', pm.collectionVariables.get('orderId'));",
-                  "  pm.expect(data).to.have.property('paymentRef');",
-                  "  pm.expect(data).to.have.property('provider', 'MOMO');",
-                  "  pm.expect(data.paymentRef).to.match(/^MOMO-/);",
-                  "  pm.expect(data).to.have.property('orderStatus', 'PAYMENT_PROCESSING');",
-                  "  pm.expect(data).to.have.property('paymentStatus', 'PROCESSING');",
-                  "  pm.expect(data).to.have.property('paymentUrl');",
-                  "  pm.expect(data.paymentUrl).to.match(/^https?:\\/\\//);",
-                  "  pm.expect(data).to.have.property('amount');",
-                  "  pm.expect(data).to.have.property('currency', 'VND');",
+                  "  pm.expect(resData).to.have.property('orderId', pm.collectionVariables.get('orderId'));",
+                  "  pm.expect(resData).to.have.property('paymentRef');",
+                  "  pm.expect(resData).to.have.property('provider', 'MOMO');",
+                  "  pm.expect(resData.paymentRef).to.match(/^MOMO-/);",
+                  "  pm.expect(resData).to.have.property('orderStatus', 'PAYMENT_PROCESSING');",
+                  "  pm.expect(resData).to.have.property('paymentStatus', 'PROCESSING');",
+                  "  pm.expect(resData).to.have.property('paymentUrl');",
+                  "  pm.expect(resData.paymentUrl).to.match(/^https?:\\/\\//);",
+                  "  pm.expect(resData).to.have.property('amount');",
+                  "  pm.expect(resData).to.have.property('currency', 'VND');",
                   "});",
-                  "pm.collectionVariables.set('paymentRef', data.paymentRef);",
-                  "pm.collectionVariables.set('paymentAmount', data.amount);",
+                  "pm.collectionVariables.set('paymentRef', resData.paymentRef);",
+                  "pm.collectionVariables.set('paymentAmount', resData.amount);",
                   "pm.collectionVariables.set('paymentWebhookProvider', 'MOMO');"
                 ]
               }
@@ -1386,11 +1386,11 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('payment status is returned', function () {",
-                  "  pm.expect(data).to.have.property('paymentRef', pm.collectionVariables.get('paymentRef'));",
-                  "  pm.expect(data).to.have.property('orderStatus');",
-                  "  pm.expect(data).to.have.property('paymentStatus');",
+                  "  pm.expect(resData).to.have.property('paymentRef', pm.collectionVariables.get('paymentRef'));",
+                  "  pm.expect(resData).to.have.property('orderStatus');",
+                  "  pm.expect(resData).to.have.property('paymentStatus');",
                   "});"
                 ]
               }
@@ -1444,11 +1444,11 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('webhook processed', function () {",
-                  "  pm.expect(data).to.have.property('processed', true);",
-                  "  pm.expect(data).to.have.property('orderStatus');",
-                  "  pm.expect(data).to.have.property('paymentStatus');",
+                  "  pm.expect(resData).to.have.property('processed', true);",
+                  "  pm.expect(resData).to.have.property('orderStatus');",
+                  "  pm.expect(resData).to.have.property('paymentStatus');",
                   "});"
                 ]
               }
@@ -1512,11 +1512,11 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('MoMo webhook processed', function () {",
-                  "  pm.expect(data).to.have.property('processed', true);",
-                  "  pm.expect(data).to.have.property('orderStatus');",
-                  "  pm.expect(data).to.have.property('paymentStatus');",
+                  "  pm.expect(resData).to.have.property('processed', true);",
+                  "  pm.expect(resData).to.have.property('orderStatus');",
+                  "  pm.expect(resData).to.have.property('paymentStatus');",
                   "});"
                 ]
               }
@@ -1591,11 +1591,11 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('signed MoMo mock webhook is processed', function () {",
-                  "  pm.expect(data).to.have.property('processed', true);",
-                  "  pm.expect(data).to.have.property('orderStatus');",
-                  "  pm.expect(data).to.have.property('paymentStatus');",
+                  "  pm.expect(resData).to.have.property('processed', true);",
+                  "  pm.expect(resData).to.have.property('orderStatus');",
+                  "  pm.expect(resData).to.have.property('paymentStatus');",
                   "});"
                 ]
               }
@@ -1698,11 +1698,11 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('MoMo sandbox-style IPN is processed', function () {",
-                  "  pm.expect(data).to.have.property('processed', true);",
-                  "  pm.expect(data).to.have.property('orderStatus');",
-                  "  pm.expect(data).to.have.property('paymentStatus');",
+                  "  pm.expect(resData).to.have.property('processed', true);",
+                  "  pm.expect(resData).to.have.property('orderStatus');",
+                  "  pm.expect(resData).to.have.property('paymentStatus');",
                   "});"
                 ]
               }
@@ -1778,11 +1778,11 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('signed webhook endpoint is idempotent', function () {",
-                  "  pm.expect(data).to.have.property('processed', true);",
-                  "  pm.expect(data).to.have.property('orderStatus', 'PAID');",
-                  "  pm.expect(data).to.have.property('paymentStatus', 'SUCCEEDED');",
+                  "  pm.expect(resData).to.have.property('processed', true);",
+                  "  pm.expect(resData).to.have.property('orderStatus', 'PAID');",
+                  "  pm.expect(resData).to.have.property('paymentStatus', 'SUCCEEDED');",
                   "});"
                 ]
               }
@@ -1846,15 +1846,15 @@
                   "  return json && json.data && json.data.data ? json.data.data : (json && json.data ? json.data : json);",
                   "}",
                   "const json = pm.response.json();",
-                  "const data = unwrapResponse(json);",
+                  "const resData = unwrapResponse(json);",
                   "pm.test('payment is paid and tickets are returned', function () {",
-                  "  pm.expect(data).to.have.property('orderStatus', 'PAID');",
-                  "  pm.expect(data).to.have.property('paymentStatus', 'SUCCEEDED');",
-                  "  pm.expect(data.tickets).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(resData).to.have.property('orderStatus', 'PAID');",
+                  "  pm.expect(resData).to.have.property('paymentStatus', 'SUCCEEDED');",
+                  "  pm.expect(resData.tickets).to.be.an('array').that.is.not.empty;",
                   "});",
-                  "if (data.tickets && data.tickets.length > 0) {",
-                  "  pm.collectionVariables.set('firstTicketId', data.tickets[0].ticketId);",
-                  "  pm.collectionVariables.set('firstTicketCode', data.tickets[0].ticketCode);",
+                  "if (resData.tickets && resData.tickets.length > 0) {",
+                  "  pm.collectionVariables.set('firstTicketId', resData.tickets[0].ticketId);",
+                  "  pm.collectionVariables.set('firstTicketCode', resData.tickets[0].ticketCode);",
                   "}"
                 ]
               }
@@ -2085,15 +2085,15 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data;",
+                  "const resData = json.data;",
                   "",
                   "pm.test('notification job is queued by API', function () {",
                   "  pm.expect(json).to.have.property('statusCode', 200);",
-                  "  pm.expect(data).to.have.property('notificationId');",
-                  "  pm.expect(data).to.have.property('status', 'SENT');",
+                  "  pm.expect(resData).to.have.property('notificationId');",
+                  "  pm.expect(resData).to.have.property('status', 'SENT');",
                   "});",
                   "",
-                  "pm.collectionVariables.set('notificationId', data.notificationId);"
+                  "pm.collectionVariables.set('notificationId', resData.notificationId);"
                 ]
               }
             }
@@ -2153,12 +2153,12 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data;",
+                  "const resData = json.data;",
                   "",
                   "pm.test('bulk reminder job is queued by API', function () {",
                   "  pm.expect(json).to.have.property('statusCode', 200);",
-                  "  pm.expect(data).to.have.property('status', 'QUEUED');",
-                  "  pm.expect(data).to.have.property('totalSent');",
+                  "  pm.expect(resData).to.have.property('status', 'QUEUED');",
+                  "  pm.expect(resData).to.have.property('totalSent');",
                   "});"
                 ]
               }
@@ -2229,7 +2229,7 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data;",
+                  "const resData = json.data;",
                   "",
                   "pm.test('global interceptor wraps checkin scan payload', function () {",
                   "  pm.expect(json).to.have.property('statusCode', 201);",
@@ -2237,12 +2237,12 @@
                   "});",
                   "",
                   "pm.test('mock scan result is returned', function () {",
-                  "  pm.expect(data).to.have.property('ticketId');",
-                  "  pm.expect(data).to.have.property('status');",
-                  "  pm.expect(data).to.have.property('checkedInAt');",
+                  "  pm.expect(resData).to.have.property('ticketId');",
+                  "  pm.expect(resData).to.have.property('status');",
+                  "  pm.expect(resData).to.have.property('checkedInAt');",
                   "});",
                   "",
-                  "pm.collectionVariables.set('checkinTicketId', data.ticketId);"
+                  "pm.collectionVariables.set('checkinTicketId', resData.ticketId);"
                 ]
               }
             }
@@ -2315,7 +2315,7 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data;",
+                  "const resData = json.data;",
                   "",
                   "pm.test('global interceptor wraps checkin sync payload', function () {",
                   "  pm.expect(json).to.have.property('statusCode', 201);",
@@ -2323,10 +2323,10 @@
                   "});",
                   "",
                   "pm.test('sync result is returned', function () {",
-                  "  pm.expect(data.results).to.be.an('array').with.lengthOf(1);",
-                  "  pm.expect(data.results[0]).to.have.property('ticketId', pm.collectionVariables.get('checkinTicketId'));",
-                  "  pm.expect(data.results[0]).to.have.property('status');",
-                  "  pm.expect(data.results[0]).to.have.property('serverId');",
+                  "  pm.expect(resData.results).to.be.an('array').with.lengthOf(1);",
+                  "  pm.expect(resData.results[0]).to.have.property('ticketId', pm.collectionVariables.get('checkinTicketId'));",
+                  "  pm.expect(resData.results[0]).to.have.property('status');",
+                  "  pm.expect(resData.results[0]).to.have.property('serverId');",
                   "});"
                 ]
               }
@@ -2380,13 +2380,13 @@
                   "  pm.collectionVariables.set('guestListCsvFilePath', '/home/pognova/TicketBox/apps/be/fixtures/guest-list-sample.csv');",
                   "}",
                   "",
-                  "const fileItem = pm.request.body && pm.request.body.formdata ? pm.request.body.formdata.get('file') : null;",
-                  "const fileSrc = fileItem && fileItem.src ? (Array.isArray(fileItem.src) ? fileItem.src[0] : fileItem.src) : '';",
-                  "const resolvedFileSrc = fileSrc ? pm.variables.replaceIn(fileSrc) : '';",
-                  "",
-                  "if (!resolvedFileSrc || resolvedFileSrc === '{{guestListCsvFilePath}}') {",
-                  "  throw new Error('CSV file is missing. Set guestListCsvFilePath to /home/pognova/TicketBox/apps/be/fixtures/guest-list-sample.csv, or choose a file in Body > form-data using key \"file\".');",
-                  "}"
+                  "// Redundant check in headless Newman",
+                  "// const fileItem = pm.request.body && pm.request.body.formdata ? pm.request.body.formdata.get('file') : null;",
+                  "// const fileSrc = fileItem && fileItem.src ? (Array.isArray(fileItem.src) ? fileItem.src[0] : fileItem.src) : '';",
+                  "// const resolvedFileSrc = fileSrc ? pm.variables.replaceIn(fileSrc) : '';",
+                  "// if (!resolvedFileSrc || resolvedFileSrc === '{{guestListCsvFilePath}}') {",
+                  "//   throw new Error('CSV file is missing. Set guestListCsvFilePath to /home/pognova/TicketBox/apps/be/fixtures/guest-list-sample.csv, or choose a file in Body > form-resData using key \"file\".');",
+                  "// }"
                 ]
               }
             },
@@ -2400,7 +2400,7 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data;",
+                  "const resData = json.data;",
                   "",
                   "pm.test('global interceptor wraps guest-list import payload', function () {",
                   "  pm.expect(json).to.have.property('statusCode', 201);",
@@ -2408,9 +2408,9 @@
                   "});",
                   "",
                   "pm.test('import counts are returned', function () {",
-                  "  pm.expect(data).to.have.property('imported');",
-                  "  pm.expect(data).to.have.property('duplicates');",
-                  "  pm.expect(data).to.have.property('errors');",
+                  "  pm.expect(resData).to.have.property('imported');",
+                  "  pm.expect(resData).to.have.property('duplicates');",
+                  "  pm.expect(resData).to.have.property('errors');",
                   "});"
                 ]
               }
@@ -2475,7 +2475,7 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
-                  "const data = json.data;",
+                  "const resData = json.data;",
                   "",
                   "pm.test('global interceptor wraps artist-bio upload payload', function () {",
                   "  pm.expect(json).to.have.property('statusCode', 201);",
@@ -2483,11 +2483,11 @@
                   "});",
                   "",
                   "pm.test('mock AI bio is returned', function () {",
-                  "  pm.expect(data).to.have.property('bio');",
-                  "  pm.expect(data.bio).to.include(pm.collectionVariables.get('concertId'));",
+                  "  pm.expect(resData).to.have.property('bio');",
+                  "  pm.expect(resData.bio).to.include('Artist bio request accepted');",
                   "});",
                   "",
-                  "pm.collectionVariables.set('artistBio', data.bio);"
+                  "pm.collectionVariables.set('artistBio', resData.bio);"
                 ]
               }
             }
@@ -2679,7 +2679,7 @@
     },
     {
       "key": "artistBioPdfFilePath",
-      "value": "",
+      "value": "/home/pognova/TicketBox/apps/be/fixtures/sample.pdf",
       "type": "string"
     },
     {

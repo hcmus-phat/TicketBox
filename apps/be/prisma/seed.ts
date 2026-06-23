@@ -278,19 +278,43 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
   if (concert && concert.id !== expectedConcertId) {
     console.log(`Found seeded concert with incorrect ID (${concert.id}). Recreating with expected ID (${expectedConcertId})...`);
     // Delete dependent records first to avoid foreign key violations
+    await prisma.guestImportRow.deleteMany({ where: { batch: { concertId: concert.id } } });
+    await prisma.guestImportBatch.deleteMany({ where: { concertId: concert.id } });
+    await prisma.guestList.deleteMany({ where: { concertId: concert.id } });
+    await prisma.checkinEvent.deleteMany({ where: { ticket: { concertId: concert.id } } });
     await prisma.ticket.deleteMany({ where: { concertId: concert.id } });
+    await prisma.paymentEvent.deleteMany({ where: { order: { concertId: concert.id } } });
+    await prisma.orderItem.deleteMany({ where: { order: { concertId: concert.id } } });
     await prisma.order.deleteMany({ where: { concertId: concert.id } });
-    await prisma.reservation.deleteMany({ where: { concertId: concert.id } });
+    await prisma.reservationItem.deleteMany({ where: { reservation: { concertId: concert.id } } });
     await prisma.reservationSeat.deleteMany({ where: { concertId: concert.id } });
+    await prisma.reservation.deleteMany({ where: { concertId: concert.id } });
     await prisma.waitingRoomSession.deleteMany({ where: { concertId: concert.id } });
     await prisma.checkinDevice.deleteMany({ where: { concertId: concert.id } });
     await prisma.artistAsset.deleteMany({ where: { concertId: concert.id } });
-    await prisma.guestList.deleteMany({ where: { concertId: concert.id } });
-    await prisma.guestImportBatch.deleteMany({ where: { concertId: concert.id } });
+    await prisma.userTicketQuota.deleteMany({ where: { ticketType: { concertId: concert.id } } });
     await prisma.ticketType.deleteMany({ where: { concertId: concert.id } });
     await prisma.seatZone.deleteMany({ where: { concertId: concert.id } });
     await prisma.concert.delete({ where: { id: concert.id } });
     concert = null;
+  }
+
+  if (concert) {
+    console.log(`Cleaning up old test data (orders, tickets, reservations, quotas) for concert: ${concertName}...`);
+    await prisma.guestImportRow.deleteMany({ where: { batch: { concertId: concert.id } } });
+    await prisma.guestImportBatch.deleteMany({ where: { concertId: concert.id } });
+    await prisma.guestList.deleteMany({ where: { concertId: concert.id } });
+    await prisma.checkinEvent.deleteMany({ where: { ticket: { concertId: concert.id } } });
+    await prisma.ticket.deleteMany({ where: { concertId: concert.id } });
+    await prisma.paymentEvent.deleteMany({ where: { order: { concertId: concert.id } } });
+    await prisma.orderItem.deleteMany({ where: { order: { concertId: concert.id } } });
+    await prisma.order.deleteMany({ where: { concertId: concert.id } });
+    await prisma.reservationItem.deleteMany({ where: { reservation: { concertId: concert.id } } });
+    await prisma.reservationSeat.deleteMany({ where: { concertId: concert.id } });
+    await prisma.reservation.deleteMany({ where: { concertId: concert.id } });
+    await prisma.waitingRoomSession.deleteMany({ where: { concertId: concert.id } });
+    await prisma.artistAsset.deleteMany({ where: { concertId: concert.id } });
+    await prisma.userTicketQuota.deleteMany({ where: { ticketType: { concertId: concert.id } } });
   }
 
   if (!concert) {
@@ -351,11 +375,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
   }
 
   const ticketTypesData = [
-    { id: 'da8e128c-682d-4fbb-bee4-5f26545cae11', name: 'SVIP', price: '1800000', totalQuantity: 50 },
-    { id: 'f7c6c7ab-f989-40c8-b81b-8338fc30730e', name: 'VIP', price: '1200000', totalQuantity: 100 },
-    { id: '07ad8d58-b7cc-4fbc-9593-9a76067f9070', name: 'CAT1', price: '850000', totalQuantity: 150 },
-    { id: '4787e219-2270-4f98-8d15-1a7581171cb1', name: 'CAT2', price: '600000', totalQuantity: 200 },
-    { id: '0120ec7c-8c06-4159-a3df-e242d3b2be52', name: 'GA', price: '450000', totalQuantity: 300 },
+    { id: 'da8e128c-682d-4fbb-bee4-5f26545cae11', name: 'SVIP', price: '1800000', totalQuantity: 50, maxPerUser: 100 },
+    { id: 'f7c6c7ab-f989-40c8-b81b-8338fc30730e', name: 'VIP', price: '1200000', totalQuantity: 100, maxPerUser: 100 },
+    { id: '07ad8d58-b7cc-4fbc-9593-9a76067f9070', name: 'CAT1', price: '850000', totalQuantity: 150, maxPerUser: 100 },
+    { id: '4787e219-2270-4f98-8d15-1a7581171cb1', name: 'CAT2', price: '600000', totalQuantity: 200, maxPerUser: 100 },
+    { id: '0120ec7c-8c06-4159-a3df-e242d3b2be52', name: 'GA', price: '450000', totalQuantity: 300, maxPerUser: 100 },
   ];
 
   for (const tt of ticketTypesData) {
@@ -378,20 +402,22 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
           price: tt.price,
           totalQuantity: tt.totalQuantity,
           remaining: tt.totalQuantity,
+          maxPerUser: tt.maxPerUser,
           status: TicketTypeStatus.ACTIVE,
         },
       });
       console.log(`  Created TicketType: ${tt.name} (ID: ${created.id})`);
     } else {
-      // update seatZoneId if it's null
-      if (!existing.seatZoneId && zoneMap[tt.name]) {
-        await prisma.ticketType.update({
-          where: { id: existing.id },
-          data: { seatZoneId: zoneMap[tt.name] },
-        });
-        console.log(`  Updated SeatZoneId for existing TicketType ${tt.name}`);
-      }
-      console.log(`  TicketType ${tt.name} already exists (ID: ${existing.id})`);
+      // update seatZoneId, remaining and maxPerUser if it exists
+      await prisma.ticketType.update({
+        where: { id: existing.id },
+        data: {
+          seatZoneId: existing.seatZoneId || zoneMap[tt.name] || null,
+          remaining: tt.totalQuantity,
+          maxPerUser: tt.maxPerUser,
+        },
+      });
+      console.log(`  TicketType ${tt.name} already exists (ID: ${existing.id}). Reset remaining/maxPerUser.`);
     }
   }
 
