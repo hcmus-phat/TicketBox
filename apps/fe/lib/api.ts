@@ -172,6 +172,17 @@ export function getFriendlyErrorMessage(error: any): string {
       return 'Thông tin yêu cầu không tồn tại.';
     }
     if (code === 401) {
+      const raw = error.rawMessage || error.message;
+      if (raw) {
+        const checkMsg = (msg: string) => {
+          const m = msg.toLowerCase().trim();
+          return m === 'invalid email or password' || m === 'invalid credentials' || m === 'incorrect password';
+        };
+        const hasInvalidCreds = Array.isArray(raw) ? raw.some(checkMsg) : checkMsg(String(raw));
+        if (hasInvalidCreds) {
+          return 'Email hoặc mật khẩu không chính xác.';
+        }
+      }
       return 'Phiên làm việc hết hạn. Vui lòng đăng nhập lại.';
     }
 
@@ -225,6 +236,15 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       if (window.localStorage.getItem('access_token')) {
         window.localStorage.removeItem('access_token');
         window.dispatchEvent(new CustomEvent('ticketbox-auth-change'));
+        window.dispatchEvent(
+          new CustomEvent('ticketbox-toast', {
+            detail: {
+              title: 'Phiên làm việc hết hạn',
+              message: 'Vui lòng đăng nhập lại để tiếp tục sử dụng dịch vụ.',
+              type: 'error',
+            },
+          })
+        );
       }
     }
 

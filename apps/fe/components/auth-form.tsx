@@ -56,10 +56,28 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       if (isLogin) {
         await login({ email, password });
+        window.dispatchEvent(
+          new CustomEvent('ticketbox-toast', {
+            detail: {
+              title: 'Đăng nhập thành công',
+              message: 'Chào mừng bạn quay trở lại với TicketBox!',
+              type: 'success',
+            },
+          })
+        );
       } else {
         await register({ email, password, fullName, phone });
         // Auto-login after register
         await login({ email, password });
+        window.dispatchEvent(
+          new CustomEvent('ticketbox-toast', {
+            detail: {
+              title: 'Đăng ký thành công',
+              message: 'Tài khoản của bạn đã được tạo và đăng nhập thành công!',
+              type: 'success',
+            },
+          })
+        );
       }
 
       router.push(redirect);

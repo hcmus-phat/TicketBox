@@ -123,6 +123,15 @@ export function Header() {
   async function handleLogout() {
     try {
       await logout();
+      window.dispatchEvent(
+        new CustomEvent('ticketbox-toast', {
+          detail: {
+            title: 'Đăng xuất thành công',
+            message: 'Hẹn gặp lại bạn lần sau!',
+            type: 'success',
+          },
+        })
+      );
     } finally {
       setSession(null);
       setShowAccount(false);
