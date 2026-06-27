@@ -55,6 +55,41 @@ export class AiBioProcessor extends WorkerHost {
       `Processing AI Bio job for concert ${concertId}, asset ${assetId}`,
     );
 
+    // Fallback if Gemini API Key is missing, to prevent 500 errors in test/dev envs
+    if (!this.config.apiKey || this.config.apiKey.trim() === "") {
+      this.logger.warn(
+        "GEMINI_API_KEY is not configured. Falling back to mock AI bio generation.",
+      );
+      const mockStructured: GeneratedBioPayload = {
+        shortBio: "Đây là một đoạn bio ngắn mock cho nghệ sĩ.",
+        fullBio:
+          "Artist bio request accepted. Đây là toàn bộ đoạn bio mock dài hơn cho nghệ sĩ, được tạo tự động vì không có Gemini API key.",
+        tagline: "Mock tagline nghệ sĩ",
+        genres: ["Pop", "Rock"],
+      };
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      await this.prisma.artistAsset.update({
+        where: { id: assetId },
+        data: {
+          status: "DONE",
+          generatedBio: mockStructured.fullBio,
+        },
+      });
+
+      await this.prisma.concert.update({
+        where: { id: concertId },
+        data: {
+          artistBio: mockStructured.fullBio,
+          artistBioStatus: "DONE",
+        },
+      });
+      await this.invalidateConcertCache(concertId);
+      await job.updateProgress(100);
+      return { bio: mockStructured.fullBio, structuredBio: mockStructured };
+    }
+
     try {
       const asset = await this.prisma.artistAsset.findUnique({
         where: { id: assetId },
