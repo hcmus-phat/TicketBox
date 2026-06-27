@@ -636,15 +636,17 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       { id: '07ad8d58-b7cc-4fbc-9593-9a76067f9070', name: 'CAT1', price: '1000000', totalQuantity: 50, maxPerUser: 100 },
       { id: '4787e219-2270-4f98-8d15-1a7581171cb1', name: 'CAT2', price: '700000', totalQuantity: 50, maxPerUser: 100 },
       { id: '0120ec7c-8c06-4159-a3df-e242d3b2be52', name: 'GA', price: '400000', totalQuantity: 50, maxPerUser: 100 },
-    ]
+    ],
   };
 
   await seedConcert(ticketBoxLiveConcert);
 
   // 3. Define and seed real concerts corresponding to local WebP fixtures
+  // NOTE: All IDs are proper UUID v4 (group3 starts with 4, group4 starts with 8/9/a/b)
+  // to pass Zod z.string().uuid() validation in API routes.
   const webpConcerts: ConcertSeedData[] = [
     {
-      id: 'f0000000-0000-0000-0000-000000000001',
+      id: 'd8004a06-f8eb-4b82-b146-182f6fd3e9ab',
       name: 'Hanwha Life Esports - Global Fanfest in Vietnam',
       description: 'Đại nhạc hội và ngày hội giao lưu người hâm mộ Hanwha Life Esports Global Fanfest tại Việt Nam.',
       artistName: 'Hanwha Life Esports',
@@ -656,17 +658,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/2805_hanwha-life-esports-global-fanfest-in-vietnam-thumbnail-1600x900_1.webp',
       s3Key: 'posters/hanwha_life_esports_fanfest.webp',
       defaultPosterUrl: 'https://example.com/posters/hanwha.webp',
-      zones: [
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'ga', name: 'GA', color: '#6b7280' }
-      ],
-      ticketTypes: [
-        { id: 'a0000001-2222-2222-2222-000000000001', name: 'VIP', price: '500000', totalQuantity: 200, maxPerUser: 4 },
-        { id: 'a0000001-2222-2222-2222-000000000002', name: 'GA', price: '200000', totalQuantity: 500, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000002',
+      id: 'cc917d37-1e31-4144-8f4d-d5fc3868ae5e',
       name: 'Lim Yoona Fan Meeting in HCMC',
       description: 'Buổi gặp gỡ người hâm mộ chính thức của nữ ca sĩ, diễn viên Lim Yoona (Girls Generation) tại TP. Hồ Chí Minh.',
       artistName: 'Lim Yoona',
@@ -678,21 +674,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/2. 0829_THUMBNAIL_YOONA FM IN HCMC.webp',
       s3Key: 'posters/yoona_fan_meeting.webp',
       defaultPosterUrl: 'https://example.com/posters/yoona.webp',
-      zones: [
-        { code: 'svip', name: 'SVIP', color: '#dc2626' },
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'std', name: 'Standard', color: '#2563eb' },
-        { code: 'ga', name: 'GA', color: '#6b7280' }
-      ],
-      ticketTypes: [
-        { id: 'a0000002-2222-2222-2222-000000000001', name: 'SVIP', price: '4500000', totalQuantity: 100, maxPerUser: 4 },
-        { id: 'a0000002-2222-2222-2222-000000000002', name: 'VIP', price: '3500000', totalQuantity: 150, maxPerUser: 4 },
-        { id: 'a0000002-2222-2222-2222-000000000003', name: 'Standard', price: '2000000', totalQuantity: 200, maxPerUser: 4 },
-        { id: 'a0000002-2222-2222-2222-000000000004', name: 'GA', price: '1000000', totalQuantity: 300, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000003',
+      id: 'f78cdb52-920a-4e65-a6a6-4d1249e85798',
       name: 'Vỹ Dạ Waterfest 2026',
       description: 'Lễ hội âm nhạc nước hoành tráng Vỹ Dạ Waterfest quy tụ dàn nghệ sĩ hàng đầu Việt Nam.',
       artistName: 'Various Artists',
@@ -704,19 +690,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/0206_vy-da-waterfest-2026-thumbnail-1600x900.webp',
       s3Key: 'posters/vy_da_waterfest.webp',
       defaultPosterUrl: 'https://example.com/posters/vy_da.webp',
-      zones: [
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'std', name: 'Standard', color: '#2563eb' },
-        { code: 'ga', name: 'GA', color: '#6b7280' }
-      ],
-      ticketTypes: [
-        { id: 'a0000003-2222-2222-2222-000000000001', name: 'VIP', price: '1200000', totalQuantity: 200, maxPerUser: 4 },
-        { id: 'a0000003-2222-2222-2222-000000000002', name: 'Standard', price: '800000', totalQuantity: 300, maxPerUser: 4 },
-        { id: 'a0000003-2222-2222-2222-000000000003', name: 'GA', price: '500000', totalQuantity: 500, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000004',
+      id: 'c7f72df0-c3d5-4299-b005-87cdda37afa0',
       name: 'Rhyder - Album Live Concert',
       description: 'Live concert ra mắt album phòng thu đặc biệt của quán quân Rhyder.',
       artistName: 'Rhyder',
@@ -728,19 +706,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/thumbnail_rhyder.webp',
       s3Key: 'posters/rhyder_live.webp',
       defaultPosterUrl: 'https://example.com/posters/rhyder.webp',
-      zones: [
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'std', name: 'Standard', color: '#2563eb' },
-        { code: 'ga', name: 'GA', color: '#6b7280' }
-      ],
-      ticketTypes: [
-        { id: 'a0000004-2222-2222-2222-000000000001', name: 'VIP', price: '2500000', totalQuantity: 150, maxPerUser: 4 },
-        { id: 'a0000004-2222-2222-2222-000000000002', name: 'Standard', price: '1500000', totalQuantity: 200, maxPerUser: 4 },
-        { id: 'a0000004-2222-2222-2222-000000000003', name: 'GA', price: '800000', totalQuantity: 300, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000005',
+      id: '8bd15adf-5483-4be6-a653-8d9f07c2711d',
       name: 'GAM Esports Fan Meeting',
       description: 'Buổi gặp gỡ, giao lưu chính thức của đội tuyển LMHT hàng đầu Việt Nam GAM Esports cùng người hâm mộ.',
       artistName: 'GAM Esports',
@@ -752,17 +722,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/1600x900_GAM.webp',
       s3Key: 'posters/gam_esports_meeting.webp',
       defaultPosterUrl: 'https://example.com/posters/gam.webp',
-      zones: [
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'ga', name: 'GA', color: '#6b7280' }
-      ],
-      ticketTypes: [
-        { id: 'a0000005-2222-2222-2222-000000000001', name: 'VIP', price: '400000', totalQuantity: 150, maxPerUser: 4 },
-        { id: 'a0000005-2222-2222-2222-000000000002', name: 'GA', price: '150000', totalQuantity: 400, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000006',
+      id: '2520d45b-f52e-40c1-9ba7-fcfae6524cc5',
       name: 'Pink Run 2026',
       description: 'Giải chạy marathon từ thiện nâng cao nhận thức cộng đồng Pink Run 2026.',
       artistName: 'Pink Run',
@@ -774,15 +738,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/KV pinkrun -1600 x 900.webp',
       s3Key: 'posters/pinkrun_marathon.webp',
       defaultPosterUrl: 'https://example.com/posters/pinkrun.webp',
-      zones: [
-        { code: 'std', name: 'Standard', color: '#2563eb' }
-      ],
-      ticketTypes: [
-        { id: 'a0000006-2222-2222-2222-000000000001', name: 'Standard', price: '350000', totalQuantity: 1000, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000007',
+      id: '21c8f56b-61fb-4cf7-bee7-6ed6f2bb9256',
       name: 'The Wandering Rose Concert',
       description: 'Đêm nhạc thính phòng acoustic The Wandering Rose lãng mạn tại không gian Đà Lạt.',
       artistName: 'The Wandering Rose',
@@ -794,17 +754,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/thumbnail_the wandering rose.webp',
       s3Key: 'posters/wandering_rose.webp',
       defaultPosterUrl: 'https://example.com/posters/rose.webp',
-      zones: [
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'std', name: 'Standard', color: '#2563eb' }
-      ],
-      ticketTypes: [
-        { id: 'a0000007-2222-2222-2222-000000000001', name: 'VIP', price: '1500000', totalQuantity: 100, maxPerUser: 4 },
-        { id: 'a0000007-2222-2222-2222-000000000002', name: 'Standard', price: '900000', totalQuantity: 200, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000008',
+      id: '1951e227-e6ca-4aa4-ac0d-09e8e8920d4e',
       name: 'The Next Live Show',
       description: 'Sân khấu âm nhạc đặc biệt The Next tập hợp các tài năng âm nhạc trẻ triển vọng.',
       artistName: 'The Next',
@@ -816,17 +770,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/thumbnail_thenext.webp',
       s3Key: 'posters/the_next_show.webp',
       defaultPosterUrl: 'https://example.com/posters/next.webp',
-      zones: [
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'std', name: 'Standard', color: '#2563eb' }
-      ],
-      ticketTypes: [
-        { id: 'a0000008-2222-2222-2222-000000000001', name: 'VIP', price: '2000000', totalQuantity: 150, maxPerUser: 4 },
-        { id: 'a0000008-2222-2222-2222-000000000002', name: 'Standard', price: '1000000', totalQuantity: 250, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000009',
+      id: 'f28f92c2-0c17-425e-9d3f-4b27d53741f5',
       name: 'Ngày Hội Sen Huế 2026',
       description: 'Lễ hội văn hóa ẩm thực truyền thống giới thiệu vẻ đẹp và các sản phẩm từ Sen Huế.',
       artistName: 'Sen Huế',
@@ -838,15 +786,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/ngay-hoi-sen-hue-2105-bg-thumbnail.webp',
       s3Key: 'posters/sen_hue.webp',
       defaultPosterUrl: 'https://example.com/posters/sen_hue.webp',
-      zones: [
-        { code: 'std', name: 'Standard', color: '#2563eb' }
-      ],
-      ticketTypes: [
-        { id: 'a0000009-2222-2222-2222-000000000001', name: 'Standard', price: '100000', totalQuantity: 500, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000010',
+      id: '93f22cd0-9803-48b7-87b9-23a4d8ed9d48',
       name: 'Luminix Event 2026',
       description: 'Trải nghiệm âm thanh và ánh sáng nghệ thuật đỉnh cao của lễ hội Luminix.',
       artistName: 'Luminix',
@@ -858,17 +802,11 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/LUMINIX-thumpnail.webp',
       s3Key: 'posters/luminix_event.webp',
       defaultPosterUrl: 'https://example.com/posters/luminix.webp',
-      zones: [
-        { code: 'vip', name: 'VIP', color: '#eab308' },
-        { code: 'ga', name: 'GA', color: '#6b7280' }
-      ],
-      ticketTypes: [
-        { id: 'a0000010-2222-2222-2222-000000000001', name: 'VIP', price: '1800000', totalQuantity: 150, maxPerUser: 4 },
-        { id: 'a0000010-2222-2222-2222-000000000002', name: 'GA', price: '900000', totalQuantity: 300, maxPerUser: 4 }
-      ]
+      zones: [],
+      ticketTypes: [],
     },
     {
-      id: 'f0000000-0000-0000-0000-000000000011',
+      id: '7b3400a6-be97-4fb3-97c0-750d0aaecba2',
       name: 'Giữa Một Vạn Tour - Chapter Four (Chặng 4)',
       description: 'Đêm nhạc "Giữa Một Vạn Tour - Chapter Four" của ca sĩ Phùng Khánh Linh.',
       artistName: 'Phùng Khánh Linh',
@@ -880,23 +818,9 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       posterLocalPath: '../fixtures/chang4_thumbnail_1600 x 900.webp',
       s3Key: 'posters/giua_mot_van_tour_c4.webp',
       defaultPosterUrl: 'https://example.com/posters/giua_mot_van_tour.webp',
-      zones: [
-        { code: 'black_swan', name: 'BLACK SWAN', color: '#000000' },
-        { code: 'swan', name: 'SWAN', color: '#f8fafc' },
-        { code: 'sword', name: 'SWORD', color: '#94a3b8' },
-        { code: 'ballerina', name: 'BALLERINA', color: '#ec4899' },
-        { code: 'feather', name: 'FEATHER', color: '#f43f5e' },
-        { code: 'moonlight', name: 'MOONLIGHT', color: '#38bdf8' }
-      ],
-      ticketTypes: [
-        { id: 'a0000011-2222-2222-2222-000000000001', name: 'BLACK SWAN', price: '10000000', totalQuantity: 10, maxPerUser: 4 },
-        { id: 'a0000011-2222-2222-2222-000000000002', name: 'SWAN', price: '3000000', totalQuantity: 50, maxPerUser: 4 },
-        { id: 'a0000011-2222-2222-2222-000000000003', name: 'SWORD', price: '2200000', totalQuantity: 100, maxPerUser: 4 },
-        { id: 'a0000011-2222-2222-2222-000000000004', name: 'BALLERINA', price: '1600000', totalQuantity: 150, maxPerUser: 4 },
-        { id: 'a0000011-2222-2222-2222-000000000005', name: 'FEATHER', price: '1100000', totalQuantity: 200, maxPerUser: 4 },
-        { id: 'a0000011-2222-2222-2222-000000000006', name: 'MOONLIGHT', price: '860000', totalQuantity: 300, maxPerUser: 4 }
-      ]
-    }
+      zones: [],
+      ticketTypes: [],
+    },
   ];
 
   const defaultZones: ZoneSeedData[] = [
@@ -915,12 +839,18 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     { name: 'GA', price: '400000', totalQuantity: 50, maxPerUser: 4 },
   ];
 
+  // Generate a deterministic UUID v4-compliant ID from concertId + ticketTypeName.
+  // UUID v4 format: xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx
   function generateDeterministicUuid(concertId: string, ticketTypeName: string): string {
     const hash = crypto.createHash('sha256').update(`${concertId}-${ticketTypeName}`).digest('hex');
     const part1 = hash.substring(0, 8);
     const part2 = hash.substring(8, 12);
+    // group3: must start with '4' (UUID v4)
     const part3 = '4' + hash.substring(13, 16);
-    const part4 = 'a' + hash.substring(17, 20);
+    // group4: must start with 8, 9, a, or b (UUID variant)
+    const variantChars = ['8', '9', 'a', 'b'];
+    const variantChar = variantChars[parseInt(hash[16], 16) % 4];
+    const part4 = variantChar + hash.substring(17, 20);
     const part5 = hash.substring(20, 32);
     return `${part1}-${part2}-${part3}-${part4}-${part5}`;
   }
