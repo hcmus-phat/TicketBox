@@ -20,6 +20,7 @@ interface CheckoutViewModel {
   selectedSeats: string[];
   customerName: string;
   expiresAt?: string;
+  items?: any[];
 }
 
 function fallbackCheckout(): CheckoutViewModel {
@@ -53,6 +54,12 @@ function fromDraftReservation(draft: DraftReservation): CheckoutViewModel {
     selectedSeats: draft.item.seatLabels,
     customerName: 'Nguyễn Minh Anh',
     expiresAt: draft.expiresAt,
+    items: [{
+      ticketTypeId: draft.item.ticketTypeId,
+      name: draft.item.zoneName,
+      quantity: draft.item.quantity,
+      unitPrice: draft.item.unitPrice,
+    }],
   };
 }
 
@@ -119,11 +126,12 @@ export function CheckoutFlow() {
             concertDate: order.concertDate || new Date().toISOString(),
             ticketType: firstItem?.name || 'Vé',
             ticketTypeId: firstItem?.ticketTypeId || '',
-            quantity: firstItem?.quantity || order.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0,
+            quantity: order.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || firstItem?.quantity || 0,
             unitPrice: Number(firstItem?.unitPrice || 0),
             selectedSeats: order.selectedSeats || [],
             customerName: prev.customerName,
             expiresAt: order.expiresAt,
+            items: order.items || [],
           }));
 
           if (order.paymentMethod) {
@@ -286,13 +294,50 @@ export function CheckoutFlow() {
                   <span className="text-muted-foreground">Sự kiện</span>
                   <span className="text-right font-semibold text-foreground">{checkout.concertTitle}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Loại vé</span>
-                  <span className="font-semibold text-foreground">{checkout.ticketType} ({checkout.quantity} vé)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ghế</span>
-                  <span className="font-semibold text-foreground">{checkout.selectedSeats.join(', ')}</span>
+                {/* Phân bổ hạng vé kèm số ghế tương ứng */}
+                <div className="space-y-2">
+                  <span className="text-sm text-muted-foreground block mb-1">Chi tiết vé & Ghế ngồi</span>
+                  {checkout.items && checkout.items.length > 0 ? (
+                    <div className="space-y-3 pl-4 border-l-2 border-primary/30">
+                      {(() => {
+                        let seatIdx = 0;
+                        return checkout.items.map((item, idx) => {
+                          const itemSeats = [];
+                          for (let i = 0; i < item.quantity; i++) {
+                            if (checkout.selectedSeats[seatIdx]) {
+                              itemSeats.push(checkout.selectedSeats[seatIdx]);
+                            }
+                            seatIdx++;
+                          }
+                          return (
+                            <div key={idx} className="flex flex-col gap-1 text-sm bg-muted/40 p-2.5 rounded-2xl border border-border/40">
+                              <div className="flex justify-between items-center">
+                                <span className="font-bold text-foreground">{item.name || item.ticketType || 'Vé'}</span>
+                                <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+                                  {item.quantity} vé
+                                </span>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Ghế: <strong className="text-foreground">{itemSeats.join(', ') || 'Chưa phân bổ'}</strong>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center text-sm bg-muted/40 p-2.5 rounded-2xl border border-border/40">
+                      <span className="font-bold text-foreground">{checkout.ticketType}</span>
+                      <div className="text-right">
+                        <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full mb-1 inline-block">
+                          {checkout.quantity} vé
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          Ghế: <strong className="text-foreground">{checkout.selectedSeats.join(', ')}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Ngày diễn</span>
@@ -364,6 +409,7 @@ export function CheckoutFlow() {
             quantity={checkout.quantity}
             unitPrice={checkout.unitPrice}
             selectedSeats={checkout.selectedSeats}
+            items={checkout.items}
           />
         </div>
       </div>

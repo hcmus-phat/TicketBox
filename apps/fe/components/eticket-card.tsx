@@ -10,6 +10,7 @@ interface ETicketCardProps {
   seatNumber: string;
   price: number;
   purchaseDate: string;
+  qrPayload?: string;
 }
 
 export function ETicketCard({
@@ -22,6 +23,7 @@ export function ETicketCard({
   seatNumber,
   price,
   purchaseDate,
+  qrPayload,
 }: ETicketCardProps) {
   const formattedDate = new Date(date).toLocaleDateString('vi-VN', {
     weekday: 'long',
@@ -79,11 +81,20 @@ export function ETicketCard({
         </div>
 
         <div className="mb-6 flex items-center justify-center rounded-3xl bg-muted/60 p-4">
-          <div className="h-32 w-32 rounded-2xl bg-white p-2 shadow-inner">
-            <svg viewBox="0 0 100 100" className="w-full h-full">
-              <rect width="100" height="100" fill="white" />
-              <path d="M8 8h24v24H8zM14 14v12h12V14zM68 8h24v24H68zM74 14v12h12V14zM8 68h24v24H8zM14 74v12h12V74zM44 10h8v8h-8zM56 18h8v8h-8zM40 32h24v8H40zM72 44h8v8h-8zM84 52h8v8h-8zM40 52h8v8h-8zM52 60h16v8H52zM72 72h20v8H72zM40 78h8v14h-8zM56 84h8v8h-8z" fill="black" />
-            </svg>
+          <div className="h-32 w-32 rounded-2xl bg-white p-2 shadow-inner flex items-center justify-center overflow-hidden">
+            {qrPayload ? (
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPayload)}`}
+                alt="QR Code"
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
+            ) : (
+              <svg viewBox="0 0 100 100" className="w-full h-full">
+                <rect width="100" height="100" fill="white" />
+                <path d="M8 8h24v24H8zM14 14v12h12V14zM68 8h24v24H68zM74 14v12h12V14zM8 68h24v24H8zM14 74v12h12V74zM44 10h8v8h-8zM56 18h8v8h-8zM40 32h24v8H40zM72 44h8v8h-8zM84 52h8v8h-8zM40 52h8v8h-8zM52 60h16v8H52zM72 72h20v8H72zM40 78h8v14h-8zM56 84h8v8h-8z" fill="black" />
+              </svg>
+            )}
           </div>
         </div>
 

@@ -913,8 +913,8 @@ export async function getTicketZonesAsync(
     }
 
     processedZones.forEach((zone) => {
-      // If code is already explicitly valid, keep it
-      if (validCodes.includes(zone.code)) {
+      // Nếu zone đã có code từ database (khác rỗng), giữ nguyên hoàn toàn để khớp với Seatmap SVG
+      if (zone.code && zone.code.trim() !== "") {
         return;
       }
       // Otherwise, assign visual code based on price ranking index

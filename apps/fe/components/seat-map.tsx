@@ -97,6 +97,7 @@ export function SeatMap({ concertId, concertTitle, zones, seats, svgContent }: S
           status: 'available' as const,
           zoneId: zone?.id || '',
           seatZoneId: zone?.id || '',
+          ticketTypeId: zone?.ticketTypeId || zone?.id || '',
         };
       });
     } else {
@@ -158,14 +159,15 @@ export function SeatMap({ concertId, concertTitle, zones, seats, svgContent }: S
       if (exists) {
         return current.filter((s) => s.label.toUpperCase() !== seatLabel.toUpperCase());
       } else {
-        // Enforce same-zone policy for API compatibility
-        const diffZoneSeat = current.find((s) => s.zoneCode.toLowerCase() !== zoneCode.toLowerCase());
-        if (diffZoneSeat) {
+        const zone = currentZones.find((z) => (z.code || "").toLowerCase() === zoneCode.toLowerCase());
+        const maxLimit = zone ? zone.maxPerUser : 4;
+        
+        if (current.length >= maxLimit) {
           window.dispatchEvent(
             new CustomEvent('ticketbox-toast', {
               detail: {
-                title: 'Khác hạng vé',
-                message: 'Bạn chỉ có thể chọn các ghế thuộc cùng một hạng vé cho mỗi đơn hàng.',
+                title: 'Giới hạn số lượng',
+                message: `Bạn chỉ được đặt tối đa ${maxLimit} vé cho mỗi giao dịch.`,
                 type: 'error',
               },
             })
@@ -212,11 +214,29 @@ export function SeatMap({ concertId, concertTitle, zones, seats, svgContent }: S
         ? window.crypto.randomUUID() 
         : `idempotency-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-      const orderResponse = await createOrder({
+      // Phân nhóm ghế theo ticketTypeId để hỗ trợ đặt nhiều loại vé khác nhau
+      const itemsMap = new Map<string, string[]>();
+      selectedSeats.forEach((s) => {
+        const tId = s.ticketTypeId || s.zoneId;
+        if (tId) {
+          const currentSeats = itemsMap.get(tId) || [];
+          itemsMap.set(tId, [...currentSeats, s.label]);
+        }
+      });
+
+      const items = Array.from(itemsMap.entries()).map(([ticketTypeId, seatNumbers]) => ({
+        ticketTypeId,
+        seatNumbers,
+      }));
+
+      const payload = {
         concertId,
-        ticketTypeId: activeSelectedZone.ticketTypeId || activeSelectedZone.id,
+        items,
+        ticketTypeId: items[0]?.ticketTypeId,
         seatNumbers: selectedSeats.map((s) => s.label),
-      }, idempotencyKey);
+      };
+
+      const orderResponse = await createOrder(payload, idempotencyKey);
 
       const orderId = orderResponse.orderId || orderResponse.data?.orderId || orderResponse.id;
       if (!orderId) {
@@ -254,6 +274,7 @@ export function SeatMap({ concertId, concertTitle, zones, seats, svgContent }: S
       primaryDisabled={primaryDisabled}
       onPrimaryAction={primaryAction}
       onChangeZone={!svgContent && activeSelectedZone ? handleBackToOverview : undefined}
+      zones={currentZones}
     />
   );
 

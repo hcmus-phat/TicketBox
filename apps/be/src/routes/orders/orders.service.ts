@@ -117,9 +117,9 @@ export class OrdersService {
 
       // Sau khi DB transaction thành công, set thêm Redis key cho từng ghế
       const redisTTL = RESERVATION_TTL_MINUTES * 60; // 10 * 60 = 600s
-      const normalizedSeats = dto.seatNumbers.map((s) =>
-        s.trim().toUpperCase(),
-      );
+      const normalizedSeats = dto.items && dto.items.length > 0
+        ? dto.items.flatMap(item => item.seatNumbers.map(s => s.trim().toUpperCase()))
+        : dto.seatNumbers!.map(s => s.trim().toUpperCase());
       for (const seatNumber of normalizedSeats) {
         const key = `hold:seat:${dto.concertId}:${seatNumber}`;
         try {
@@ -159,9 +159,30 @@ export class OrdersService {
     dto: CreateOrderDto,
     idempotencyKey: string,
   ): Promise<OrderResponseDto> {
-    const normalizedSeats = dto.seatNumbers.map((s) => s.trim().toUpperCase());
-    const quantity = normalizedSeats.length;
-    const ticketTypeIds = [dto.ticketTypeId];
+    const orderItemsInput = dto.items && dto.items.length > 0
+      ? dto.items.map(item => ({
+          ticketTypeId: item.ticketTypeId,
+          seatNumbers: item.seatNumbers.map(s => s.trim().toUpperCase())
+        }))
+      : [{
+          ticketTypeId: dto.ticketTypeId!,
+          seatNumbers: dto.seatNumbers!.map(s => s.trim().toUpperCase())
+        }];
+
+    // Gom tất cả các ghế để check trùng và tính số lượng
+    const allSeatNumbers: string[] = [];
+    const seatToTicketTypeMap = new Map<string, string>();
+    const ticketTypeIdToSeatsMap = new Map<string, string[]>();
+
+    orderItemsInput.forEach(item => {
+      item.seatNumbers.forEach(s => {
+        allSeatNumbers.push(s);
+        seatToTicketTypeMap.set(s, item.ticketTypeId);
+      });
+      ticketTypeIdToSeatsMap.set(item.ticketTypeId, item.seatNumbers);
+    });
+
+    const ticketTypeIds = Array.from(new Set(orderItemsInput.map(item => item.ticketTypeId)));
 
     return this.prisma.$transaction(async (tx) => {
       // ── Bước 5: Lock TicketType rows FOR UPDATE ──
@@ -185,28 +206,34 @@ export class OrdersService {
       }
 
       // ── Bước 7: Validate ticket types (status, concertId, sale window) ──
-      this.inventory.validateTicketTypes(ticketTypes, dto.concertId, [
-        { ticketTypeId: dto.ticketTypeId, quantity },
-      ]);
+      const validateInputs = orderItemsInput.map(item => ({
+        ticketTypeId: item.ticketTypeId,
+        quantity: item.seatNumbers.length
+      }));
+      this.inventory.validateTicketTypes(ticketTypes, dto.concertId, validateInputs);
 
-      // ── Bước 8+9+10: Check tồn kho và quota per item ──
-      const tt = ticketTypes.find((t) => t.id === dto.ticketTypeId);
-      if (!tt) {
-        throw new BadRequestException({
-          message: "Invalid ticket type",
-          ticketTypeId: dto.ticketTypeId,
-        });
+      // ── Bước 8+9+10: Check tồn kho và quota cho từng loại vé ──
+      for (const item of orderItemsInput) {
+        const tt = ticketTypes.find((t) => t.id === item.ticketTypeId);
+        if (!tt) {
+          throw new BadRequestException({
+            message: "Invalid ticket type",
+            ticketTypeId: item.ticketTypeId,
+          });
+        }
+        const qty = item.seatNumbers.length;
+        
+        // Kiểm tra tồn kho
+        this.inventory.checkInventory(tt, qty);
+
+        // Lock/upsert quota và kiểm tra maxPerUser
+        const quota = await this.inventory.lockOrUpsertQuota(
+          tx as any,
+          user.id,
+          item.ticketTypeId,
+        );
+        this.inventory.checkQuota(quota, tt.maxPerUser, qty);
       }
-
-      this.inventory.checkInventory(tt, quantity);
-
-      // Lock/upsert quota và check
-      const quota = await this.inventory.lockOrUpsertQuota(
-        tx as any,
-        user.id,
-        dto.ticketTypeId,
-      );
-      this.inventory.checkQuota(quota, tt.maxPerUser, quantity);
 
       // ── Kiểm tra ghế đã bán hoặc đang giữ ──
       const now = new Date();
@@ -215,7 +242,7 @@ export class OrdersService {
       const soldTickets = await tx.ticket.findMany({
         where: {
           concertId: dto.concertId,
-          seatNumber: { in: normalizedSeats },
+          seatNumber: { in: allSeatNumbers },
           status: { in: ["ACTIVE", "USED"] },
         },
         select: { seatNumber: true },
@@ -228,7 +255,7 @@ export class OrdersService {
       const heldSeats = await tx.reservationSeat.findMany({
         where: {
           concertId: dto.concertId,
-          seatNumber: { in: normalizedSeats },
+          seatNumber: { in: allSeatNumbers },
           status: "HELD",
           expiresAt: { gt: now },
         },
@@ -264,29 +291,39 @@ export class OrdersService {
       });
 
       // ── Bước 12: Tạo ReservationItem ──
-      await tx.reservationItem.create({
-        data: {
-          reservationId: reservation.id,
-          ticketTypeId: dto.ticketTypeId,
-          quantity,
-          unitPrice: tt.price,
-        },
-      });
+      for (const item of orderItemsInput) {
+        const tt = ticketTypes.find(t => t.id === item.ticketTypeId)!;
+        await tx.reservationItem.create({
+          data: {
+            reservationId: reservation.id,
+            ticketTypeId: item.ticketTypeId,
+            quantity: item.seatNumbers.length,
+            unitPrice: tt.price,
+          },
+        });
+      }
 
       // ── Bước 12.5: Tạo ReservationSeat ──
-      await tx.reservationSeat.createMany({
-        data: normalizedSeats.map((seatNumber) => ({
+      const reservationSeatsData = orderItemsInput.flatMap(item => 
+        item.seatNumbers.map(seatNumber => ({
           reservationId: reservation.id,
           concertId: dto.concertId,
-          ticketTypeId: dto.ticketTypeId,
+          ticketTypeId: item.ticketTypeId,
           seatNumber,
-          status: "HELD",
+          status: "HELD" as const,
           expiresAt,
-        })),
+        }))
+      );
+      await tx.reservationSeat.createMany({
+        data: reservationSeatsData,
       });
 
       // ── Bước 13: Tính totalAmount và tạo Order ──
-      const totalAmount = Number(tt.price) * quantity;
+      let totalAmount = 0;
+      orderItemsInput.forEach(item => {
+        const tt = ticketTypes.find(t => t.id === item.ticketTypeId)!;
+        totalAmount += Number(tt.price) * item.seatNumbers.length;
+      });
 
       const order = await tx.order.create({
         data: {
@@ -302,34 +339,43 @@ export class OrdersService {
       });
 
       // ── Bước 14: Tạo OrderItem ──
-      await tx.orderItem.create({
-        data: {
-          orderId: order.id,
-          ticketTypeId: dto.ticketTypeId,
-          quantity,
-          unitPrice: tt.price,
-        },
-      });
+      for (const item of orderItemsInput) {
+        const tt = ticketTypes.find(t => t.id === item.ticketTypeId)!;
+        await tx.orderItem.create({
+          data: {
+            orderId: order.id,
+            ticketTypeId: item.ticketTypeId,
+            quantity: item.seatNumbers.length,
+            unitPrice: tt.price,
+          },
+        });
+      }
 
       // ── Bước 15: Cập nhật tồn kho và quota atomically ──
-      // Giảm remaining
-      await tx.$executeRaw`UPDATE ticket_types SET remaining = remaining - ${quantity} WHERE id = ${dto.ticketTypeId}::uuid`;
+      for (const item of orderItemsInput) {
+        const qty = item.seatNumbers.length;
+        // Giảm remaining
+        await tx.$executeRaw`UPDATE ticket_types SET remaining = remaining - ${qty} WHERE id = ${item.ticketTypeId}::uuid`;
 
-      // Tăng heldQuantity
-      await tx.$executeRaw`UPDATE user_ticket_quotas
-         SET held_quantity = held_quantity + ${quantity}, updated_at = NOW()
-         WHERE user_id = ${user.id}::uuid AND ticket_type_id = ${dto.ticketTypeId}::uuid`;
+        // Tăng heldQuantity
+        await tx.$executeRaw`UPDATE user_ticket_quotas
+           SET held_quantity = held_quantity + ${qty}, updated_at = NOW()
+           WHERE user_id = ${user.id}::uuid AND ticket_type_id = ${item.ticketTypeId}::uuid`;
+      }
 
       // ── Bước 16: Build response ──
-      const items: OrderItemResponseDto[] = [
-        {
-          ticketTypeId: dto.ticketTypeId,
+      const items: OrderItemResponseDto[] = orderItemsInput.map(item => {
+        const tt = ticketTypes.find(t => t.id === item.ticketTypeId)!;
+        const qty = item.seatNumbers.length;
+        const lineTotal = Number(tt.price) * qty;
+        return {
+          ticketTypeId: item.ticketTypeId,
           name: tt.name,
-          quantity,
+          quantity: qty,
           unitPrice: decimalToString(tt.price),
-          lineTotal: decimalToString(totalAmount),
-        },
-      ];
+          lineTotal: decimalToString(lineTotal),
+        };
+      });
 
       return {
         orderId: order.id,
