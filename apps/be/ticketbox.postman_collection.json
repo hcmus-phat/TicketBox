@@ -2481,107 +2481,7 @@
           },
           "response": []
         },
-        {
-          "name": "POST /admin/concerts/:id/artist-bio/upload - Upload artist bio PDF",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "if (!pm.collectionVariables.get('concertId') && pm.collectionVariables.get('mockConcertId')) {",
-                  "  pm.collectionVariables.set('concertId', pm.collectionVariables.get('mockConcertId'));",
-                  "}",
-                  "",
-                  "if (!pm.collectionVariables.get('artistBioPdfFilePath')) {",
-                  "  pm.collectionVariables.set('artistBioPdfFilePath', '/home/pognova/TicketBox/apps/be/fixtures/sample.pdf');",
-                  "}",
-                  "",
-                  "pm.collectionVariables.set('artistBioIdempotencyKey', pm.variables.replaceIn('{{$guid}}'));",
-                  "",
-                  "const accessToken = pm.collectionVariables.get('accessToken') || pm.environment.get('accessToken') || pm.variables.get('accessToken');",
-                  "if (accessToken) {",
-                  "  pm.request.headers.upsert({",
-                  "    key: 'Authorization',",
-                  "    value: `Bearer ${accessToken}`",
-                  "  });",
-                  "}"
-                ]
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const isConflict = pm.response.code === 409;",
-                  "",
-                  "pm.test('status code is 201 or 409', function () {",
-                  "  pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
-                  "});",
-                  "",
-                  "if (!isConflict) {",
-                  "  const json = pm.response.json();",
-                  "  const resData = json.data;",
-                  "",
-                  "  pm.test('global interceptor wraps artist-bio upload payload', function () {",
-                  "    pm.expect(json).to.have.property('statusCode', 201);",
-                  "    pm.expect(json).to.have.property('message', 'Request successful');",
-                  "  });",
-                  "",
-                  "  pm.test('mock AI bio is returned', function () {",
-                  "    pm.expect(resData).to.have.property('bio');",
-                  "    pm.expect(resData.bio).to.include('Artist bio request accepted');",
-                  "  });",
-                  "",
-                  "  pm.collectionVariables.set('artistBio', resData.bio);",
-                  "} else {",
-                  "  pm.test('conflict handled gracefully', function () {",
-                  "    const json = pm.response.json();",
-                  "    pm.expect(pm.response.code).to.equal(409);",
-                  "    pm.expect(json.success).to.be.false;",
-                  "  });",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "idempotency-key",
-                "value": "{{artistBioIdempotencyKey}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": "{{artistBioPdfFilePath}}",
-                  "description": "PDF file field expected by FileInterceptor('file')."
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/concerts/{{concertId}}/artist-bio/upload",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "concerts",
-                "{{concertId}}",
-                "artist-bio",
-                "upload"
-              ]
-            },
-            "description": "Uploads artist press-kit PDF and returns a mock generated bio. Current service only uses file.originalname."
-          },
-          "response": []
-        },
+
         {
           "name": "POST /concerts/upload-poster - Upload concert poster image",
           "event": [
@@ -2809,16 +2709,7 @@
       "value": "apps/be/fixtures/guest-list-sample.csv",
       "type": "string"
     },
-    {
-      "key": "artistBioPdfFilePath",
-      "value": "apps/be/fixtures/sample.pdf",
-      "type": "string"
-    },
-    {
-      "key": "artistBio",
-      "value": "",
-      "type": "string"
-    },
+
     {
       "key": "ticketTypeId",
       "value": "f7c6c7ab-f989-40c8-b81b-8338fc30730e",
