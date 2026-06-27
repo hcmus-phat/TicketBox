@@ -353,6 +353,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -360,8 +361,67 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     const message = errorData.message || "API Request failed";
     const statusCode = errorData.metadata?.statusCode || response.status;
 
-    if (statusCode === 401 && typeof window !== "undefined") {
-      if (window.localStorage.getItem("access_token")) {
+    if (
+      statusCode === 401 &&
+      typeof window !== "undefined" &&
+      endpoint !== "/auth/refresh"
+    ) {
+      const oldToken = window.localStorage.getItem("access_token");
+      if (oldToken) {
+        try {
+          // Attempt to fetch a new access token using the refresh cookie
+          const refreshUrl = `${API_BASE_URL}/auth/refresh`;
+          const refreshRes = await fetch(refreshUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          });
+
+          if (refreshRes.ok) {
+            const refreshJson = await refreshRes.json();
+            const newAccessToken = refreshJson?.data?.accessToken;
+            if (newAccessToken) {
+              window.localStorage.setItem("access_token", newAccessToken);
+              window.dispatchEvent(new CustomEvent("ticketbox-auth-change"));
+
+              // Retry the original request with the new access token
+              const retryHeaders = new Headers(options.headers);
+              if (
+                !retryHeaders.has("Content-Type") &&
+                !(options.body instanceof FormData)
+              ) {
+                retryHeaders.set("Content-Type", "application/json");
+              }
+              retryHeaders.set("Authorization", `Bearer ${newAccessToken}`);
+
+              const retryResponse = await fetch(url, {
+                ...options,
+                headers: retryHeaders,
+                credentials: "include",
+              });
+
+              if (retryResponse.ok) {
+                const retryJson = await retryResponse.json();
+                return retryJson.data;
+              } else {
+                const retryErrorData = await retryResponse
+                  .json()
+                  .catch(() => ({}));
+                throw new ApiError(
+                  retryErrorData.message ||
+                    "API Request failed after token refresh",
+                  retryErrorData.metadata?.statusCode || retryResponse.status,
+                );
+              }
+            }
+          }
+        } catch (refreshError) {
+          console.error("Silent token refresh failed:", refreshError);
+        }
+
+        // If refresh fails, sign out the user locally
         window.localStorage.removeItem("access_token");
         window.dispatchEvent(new CustomEvent("ticketbox-auth-change"));
         window.dispatchEvent(
