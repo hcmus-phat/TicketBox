@@ -636,7 +636,7 @@ export async function getConcertById(id: string) {
       `Backend API /concerts/${id} failed, falling back to mock data:`,
       error,
     );
-    const mock = mockConcerts.find((c) => c.id === id || slugify(c.name || c.title || "") === id);
+    const mock = mockConcerts.find((c) => c.id === id || slugify(c.title || "") === id);
     if (!mock) {
       throw error;
     }

@@ -63,6 +63,7 @@ export interface TicketZone {
   seatZoneId?: string;
   ticketTypeId?: string;
   code?: string;
+  maxPerUser?: number;
 }
 
 export interface Seat {
@@ -74,6 +75,7 @@ export interface Seat {
   zoneId: string;
   concertId?: string;
   seatZoneId?: string;
+  ticketTypeId?: string;
 }
 
 export interface MockReservationItem {

@@ -160,7 +160,7 @@ export function SeatMap({ concertId, concertTitle, zones, seats, svgContent }: S
         return current.filter((s) => s.label.toUpperCase() !== seatLabel.toUpperCase());
       } else {
         const zone = currentZones.find((z) => (z.code || "").toLowerCase() === zoneCode.toLowerCase());
-        const maxLimit = zone ? zone.maxPerUser : 4;
+        const maxLimit = zone && zone.maxPerUser !== undefined ? zone.maxPerUser : 4;
         
         if (current.length >= maxLimit) {
           window.dispatchEvent(
