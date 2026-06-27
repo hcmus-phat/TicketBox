@@ -42,8 +42,7 @@ export function InteractiveSeatMap({
     transformRef.current = { x: position.x, y: position.y, scale };
   }, [position, scale]);
 
-  // Hover/Tooltip state
-  const [hoveredSeat, setHoveredSeat] = useState<HoveredSeatInfo | null>(null);
+
 
   // Map zone data by code for quick lookup
   const zonesByCode = zones.reduce((acc, zone) => {
@@ -212,39 +211,7 @@ export function InteractiveSeatMap({
     });
   }, [svgContent, selectedSeatLabels, reservedMap]);
 
-  // Event handlers: Tooltip & Click
-  const handleMouseMoveTooltip = (e: MouseEvent<HTMLDivElement>) => {
-    const target = e.target as SVGElement;
-    const seatNumber = target.getAttribute("data-seat-number");
-    const zoneCode = target.getAttribute("data-zone-code");
 
-    if (seatNumber && zoneCode) {
-      const normalizedSeat = seatNumber.toUpperCase();
-      const status = reservedMap[normalizedSeat];
-      if (status === "CONFIRMED" || status === "HELD") {
-        setHoveredSeat(null);
-        return;
-      }
-
-      const zone = zonesByCode[zoneCode.toLowerCase()];
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setHoveredSeat({
-          label: seatNumber,
-          zoneName: zone ? zone.name : zoneCode.toUpperCase(),
-          price: zone ? zone.price : 0,
-          x: e.clientX - rect.left + 15,
-          y: e.clientY - rect.top + 15,
-        });
-      }
-    } else {
-      setHoveredSeat(null);
-    }
-  };
-
-  const handleMouseLeaveContainer = () => {
-    setHoveredSeat(null);
-  };
 
   const handleZoomIn = () => {
     setScale((prev) => Math.min(prev * 1.2, 3));
@@ -317,8 +284,6 @@ export function InteractiveSeatMap({
       {/* SVG Canvas Container */}
       <div
         ref={containerRef}
-        onMouseMove={handleMouseMoveTooltip}
-        onMouseLeave={handleMouseLeaveContainer}
         onClick={handleSvgClick}
         className={`relative h-[650px] w-full select-none overflow-hidden ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
@@ -336,22 +301,7 @@ export function InteractiveSeatMap({
           dangerouslySetInnerHTML={{ __html: svgContent }}
         />
 
-        {/* Hover Tooltip Box */}
-        {hoveredSeat && (
-          <div
-            style={{
-              left: `${hoveredSeat.x}px`,
-              top: `${hoveredSeat.y}px`,
-            }}
-            className="pointer-events-none absolute z-20 flex flex-col gap-0.5 rounded-xl border border-white/10 bg-slate-950/95 p-3 text-xs shadow-2xl backdrop-blur-md transition-all duration-75"
-          >
-            <p className="font-bold text-white">Ghế {hoveredSeat.label}</p>
-            <p className="text-slate-400">Hạng: {hoveredSeat.zoneName}</p>
-            <p className="font-black text-rose-500">
-              {hoveredSeat.price.toLocaleString("vi-VN")}đ
-            </p>
-          </div>
-        )}
+
       </div>
 
       {/* Helper Guideline overlay bottom left */}

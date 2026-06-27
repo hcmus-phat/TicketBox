@@ -278,6 +278,7 @@ export default function SuccessPage() {
                 seatNumber={ticket.seatNumber}
                 price={ticket.price}
                 purchaseDate={purchaseDate}
+                qrPayload={ticket.qrPayload}
               />
             ))}
           </div>

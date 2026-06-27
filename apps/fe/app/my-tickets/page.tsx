@@ -133,6 +133,7 @@ export default function MyTicketsPage() {
                 seatNumber={ticket.seatNumber}
                 price={ticket.price}
                 purchaseDate={new Date(ticket.paidAt).toLocaleDateString('vi-VN')}
+                qrPayload={ticket.qrPayload}
               />
             ))}
           </div>
