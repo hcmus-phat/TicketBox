@@ -182,6 +182,7 @@ export class ConcertService {
           id: concertId,
           name: createConcertDto.name.trim(),
           description: createConcertDto.description,
+          type: createConcertDto.type?.trim(),
           artistName: createConcertDto.artistName,
           venueName: createConcertDto.venueName.trim(),
           venueAddress: createConcertDto.venueAddress.trim(),
@@ -954,6 +955,10 @@ export class ConcertService {
     if (concert.status === PrismaConcertStatus.DRAFT) {
       if (dto.name !== undefined) {
         data.name = dto.name.trim();
+      }
+
+      if (dto.type !== undefined) {
+        data.type = dto.type ? dto.type.trim() : null;
       }
 
       if (dto.artistName !== undefined) {

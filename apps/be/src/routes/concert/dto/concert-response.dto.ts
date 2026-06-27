@@ -14,6 +14,7 @@ export class ConcertResponseDto {
   id: string;
   name: string;
   description: string | null;
+  type: string | null;
   artistName: string | null;
   artistBio: string | null;
   artistBioStatus: ArtistBioStatus;
@@ -33,6 +34,7 @@ export class ConcertResponseDto {
     this.id = concert.id;
     this.name = concert.name;
     this.description = concert.description;
+    this.type = concert.type;
     this.artistName = concert.artistName;
     this.artistBio = concert.artistBio;
     this.artistBioStatus = fromPrismaArtistBioStatus(
