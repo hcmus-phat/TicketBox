@@ -1,5 +1,12 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
+
+function getLocalDateString(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 @Injectable()
 export class AdminDashboardService {
@@ -164,11 +171,19 @@ export class AdminDashboardService {
     const colors = ["bg-primary", "bg-[#e0a82e]", "bg-[#3d6f8f]", "bg-accent", "bg-slate-500", "bg-indigo-500"];
     const totalSold = ticketsSold || 1;
 
-    const ticketDistribution = ticketsByTier.map((t, idx) => {
-      const typeInfo = ticketTypes.find(tt => tt.id === t.ticketTypeId);
+    // Gom nhóm số lượng vé theo tên hạng vé
+    const distributionMap = new Map<string, number>();
+    ticketsByTier.forEach((t) => {
+      const typeInfo = ticketTypes.find((tt) => tt.id === t.ticketTypeId);
+      const label = typeInfo ? typeInfo.name : "Khác";
+      const count = t._count.id;
+      distributionMap.set(label, (distributionMap.get(label) || 0) + count);
+    });
+
+    const ticketDistribution = Array.from(distributionMap.entries()).map(([label, count], idx) => {
       return {
-        label: typeInfo ? typeInfo.name : "Khác",
-        value: Math.round((t._count.id / totalSold) * 100),
+        label,
+        value: Math.round((count / totalSold) * 100),
         color: colors[idx % colors.length],
       };
     });
@@ -205,34 +220,22 @@ export class AdminDashboardService {
     // 1. Fetch all concerts
     const concerts = await this.prismaService.concert.findMany({
       include: {
-        seatZones: {
-          include: {
-            ticketTypes: true,
-          },
-        },
+        ticketTypes: true,
+        seatZones: true,
       },
     });
 
     // 2. Fetch ticket sales info for each concert
     const eventAnalytics = [];
-    
-    // Get last 14 days dates in YYYY-MM-DD format
-    const last14Days = Array.from({ length: 14 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (13 - i));
-      return d.toISOString().split("T")[0];
-    });
 
     for (const concert of concerts) {
       // Calculate total capacity
       let capacity = 0;
       const ticketTypesMap = new Map<string, any>();
       
-      concert.seatZones.forEach(zone => {
-        zone.ticketTypes.forEach(tt => {
-          capacity += tt.totalQuantity;
-          ticketTypesMap.set(tt.id, tt);
-        });
+      concert.ticketTypes.forEach(tt => {
+        capacity += tt.totalQuantity;
+        ticketTypesMap.set(tt.id, tt);
       });
 
       // Count actual sold tickets
@@ -251,15 +254,40 @@ export class AdminDashboardService {
       const ticketsSold = soldTickets.length;
       const sellThroughRate = capacity > 0 ? Math.round((ticketsSold / capacity) * 100) : 0;
 
-      // Group tickets by ticketTypeId and day for the last 14 days
+      // Generate dates from concert creation (sales open) to today
+      const startDate = new Date(concert.createdAt);
+
+      const endDate = new Date();
+
+      // Tính số ngày chênh lệch thực tế để đảm bảo có tối thiểu 7 ngày hiển thị
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays < 7) {
+        startDate.setDate(startDate.getDate() - (7 - diffDays));
+      }
+
+      const dateList: string[] = [];
+      const tempDate = new Date(startDate);
+      const endDateStr = getLocalDateString(endDate);
+
+      while (true) {
+        const currentDateStr = getLocalDateString(tempDate);
+        dateList.push(currentDateStr);
+        if (currentDateStr === endDateStr) {
+          break;
+        }
+        tempDate.setDate(tempDate.getDate() + 1);
+      }
+
+      // Group tickets by ticketTypeId and day for the dateList
       const tierVelocity = [];
 
       for (const [ttId, tt] of ticketTypesMap.entries()) {
-        const dailySales = last14Days.map(dateStr => {
+        const dailySales = dateList.map(dateStr => {
           // Count tickets created on this date
           const count = soldTickets.filter(ticket => {
             if (ticket.ticketTypeId !== ttId) return false;
-            const tDate = new Date(ticket.createdAt).toISOString().split("T")[0];
+            const tDate = getLocalDateString(new Date(ticket.createdAt));
             return tDate === dateStr;
           }).length;
 
@@ -280,6 +308,8 @@ export class AdminDashboardService {
         title: concert.name,
         artist: concert.artistName,
         eventDate: concert.eventDate,
+        status: concert.status,
+        openedAt: concert.createdAt,
         ticketsSold,
         capacity,
         sellThroughRate,
@@ -290,6 +320,128 @@ export class AdminDashboardService {
     return {
       newUsersLastMonth,
       eventAnalytics,
+    };
+  }
+
+  async getUsers(pageStr?: string | number, limitStr?: string | number, search?: string) {
+    const page = Math.max(Number(pageStr) || 1, 1);
+    const limit = Math.max(Number(limitStr) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search && search.trim()) {
+      const query = search.trim();
+      where.OR = [
+        { email: { contains: query, mode: "insensitive" } },
+        { fullName: { contains: query, mode: "insensitive" } },
+      ];
+    }
+
+    const [items, total] = await this.prismaService.$transaction([
+      this.prismaService.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          phone: true,
+          fullName: true,
+          status: true,
+          createdAt: true,
+          roles: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+      }),
+      this.prismaService.user.count({ where }),
+    ]);
+
+    return {
+      items,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async updateUserStatus(id: string, status: string, adminId?: string) {
+    if (adminId && id === adminId) {
+      throw new BadRequestException("Bạn không thể tự thay đổi trạng thái tài khoản của chính mình.");
+    }
+    const validStatuses = ["ACTIVE", "BLOCKED", "DELETED"];
+    if (!validStatuses.includes(status)) {
+      throw new BadRequestException("Trạng thái không hợp lệ");
+    }
+
+    const user = await this.prismaService.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException("Không tìm thấy người dùng");
+    }
+
+    return this.prismaService.user.update({
+      where: { id },
+      data: { status: status as any },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        status: true,
+      },
+    });
+  }
+
+  async updateUserRole(id: string, roleName: string, adminId?: string) {
+    if (adminId && id === adminId) {
+      throw new BadRequestException("Bạn không thể tự gỡ quyền Quản trị viên của chính mình.");
+    }
+    if (roleName !== "admin" && roleName !== "user") {
+      throw new BadRequestException("Vai trò không hợp lệ");
+    }
+
+    const user = await this.prismaService.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException("Không tìm thấy người dùng");
+    }
+
+    const role = await this.prismaService.role.findUnique({
+      where: { name: roleName },
+    });
+
+    if (!role) {
+      throw new NotFoundException(`Không tìm thấy vai trò ${roleName} trong hệ thống`);
+    }
+
+    await this.prismaService.$transaction(async (tx) => {
+      // Xóa tất cả roles hiện tại
+      await tx.userRole.deleteMany({
+        where: { userId: id },
+      });
+
+      // Tạo link role mới
+      await tx.userRole.create({
+        data: {
+          userId: id,
+          roleId: role.id,
+        },
+      });
+    });
+
+    return {
+      userId: id,
+      role: roleName,
     };
   }
 }

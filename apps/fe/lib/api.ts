@@ -45,8 +45,14 @@ export function getFriendlyErrorMessage(error: any): string {
     ) {
       return "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.";
     }
+    if (msgLower === "user is blocked") {
+      return "Tài khoản của bạn đã bị khóa hoặc vô hiệu hóa. Vui lòng liên hệ Admin.";
+    }
+    if (msgLower === "user is deleted") {
+      return "Tài khoản của bạn đã bị xóa khỏi hệ thống.";
+    }
     if (msgLower === "user is not active") {
-      return "Tài khoản của bạn tạm thời đã bị khóa hoặc chưa được kích hoạt.";
+      return "Tài khoản của bạn tạm thời chưa được kích hoạt.";
     }
     if (
       msgLower.includes("do not have permission") ||
@@ -274,6 +280,27 @@ export function getFriendlyErrorMessage(error: any): string {
           : checkMsg(String(raw));
         if (hasInvalidCreds) {
           return "Email hoặc mật khẩu không chính xác.";
+        }
+
+        const checkBlockedOrInactive = (msg: string) => {
+          const m = msg.toLowerCase().trim();
+          return (
+            m === "user is blocked" ||
+            m === "user is deleted" ||
+            m === "user is not active"
+          );
+        };
+        const hasBlockedOrInactive = Array.isArray(raw)
+          ? raw.some(checkBlockedOrInactive)
+          : checkBlockedOrInactive(String(raw));
+        if (hasBlockedOrInactive) {
+          if (Array.isArray(raw)) {
+            return raw
+              .map((r) => translateSingleMessage(r))
+              .filter(Boolean)
+              .join("\n");
+          }
+          return translateSingleMessage(String(raw));
         }
       }
       return "Phiên làm việc hết hạn. Vui lòng đăng nhập lại.";
@@ -1195,6 +1222,43 @@ export async function getDashboardAnalytics(): Promise<any> {
       newUsersLastMonth: 120,
       eventAnalytics: [],
     };
+  }
+}
+
+export async function getUsersAdmin(page = 1, limit = 10, search = ""): Promise<any> {
+  try {
+    let url = `/admin/users?page=${page}&limit=${limit}`;
+    if (search.trim()) {
+      url += `&search=${encodeURIComponent(search.trim())}`;
+    }
+    return await fetchApi(url);
+  } catch (error) {
+    console.error("Failed to fetch users list:", error);
+    throw error;
+  }
+}
+
+export async function updateUserStatusAdmin(userId: string, status: string): Promise<any> {
+  try {
+    return await fetchApi(`/admin/users/${userId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  } catch (error) {
+    console.error(`Failed to update user ${userId} status:`, error);
+    throw error;
+  }
+}
+
+export async function updateUserRoleAdmin(userId: string, role: string): Promise<any> {
+  try {
+    return await fetchApi(`/admin/users/${userId}/role`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    });
+  } catch (error) {
+    console.error(`Failed to update user ${userId} role:`, error);
+    throw error;
   }
 }
 

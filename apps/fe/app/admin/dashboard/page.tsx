@@ -1,14 +1,31 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { AdminLayout } from '@/components/admin-layout';
-import { ConcertTable } from '@/components/concert-table';
-import { getRevenueSummary, getConcerts, getDashboardAnalytics } from '@/lib/api';
-import { BarChart3, Users, Calendar, TrendingUp, RefreshCw, AlertCircle, Percent, Activity } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { AdminLayout } from "@/components/admin-layout";
+import { ConcertTable } from "@/components/concert-table";
+import {
+  getRevenueSummary,
+  getConcerts,
+  getDashboardAnalytics,
+} from "@/lib/api";
+import {
+  BarChart3,
+  Users,
+  Calendar,
+  TrendingUp,
+  RefreshCw,
+  AlertCircle,
+  Percent,
+  Activity,
+} from "lucide-react";
 
 function DailySalesChart({ data }: { data: any[] }) {
   if (!data || data.length === 0) {
-    return <div className="text-muted-foreground text-center py-16">Không có dữ liệu biểu đồ</div>;
+    return (
+      <div className="text-muted-foreground text-center py-16">
+        Không có dữ liệu biểu đồ
+      </div>
+    );
   }
 
   const width = 600;
@@ -20,13 +37,13 @@ function DailySalesChart({ data }: { data: any[] }) {
   const graphWidth = width - left - right;
   const graphHeight = height - top - bottom;
 
-  const maxRevenue = Math.max(...data.map(d => d.revenue), 1000000);
-  const maxTickets = Math.max(...data.map(d => d.ticketsSold), 10);
+  const maxRevenue = Math.max(...data.map((d) => d.revenue), 1000000);
+  const maxTickets = Math.max(...data.map((d) => d.ticketsSold), 10);
 
   // Build line path for revenue
-  let linePath = '';
-  let areaPath = '';
-  
+  let linePath = "";
+  let areaPath = "";
+
   data.forEach((d, i) => {
     const x = left + (i / (data.length - 1)) * graphWidth;
     const y = top + graphHeight - (d.revenue / maxRevenue) * graphHeight;
@@ -58,24 +75,47 @@ function DailySalesChart({ data }: { data: any[] }) {
           const revVal = maxRevenue - (idx / 4) * maxRevenue;
           return (
             <g key={idx}>
-              <line x1={left} y1={y} x2={left + graphWidth} y2={y} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="4 4" />
-              <text x={left - 8} y={y + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">
-                {revVal >= 1000000 ? `${(revVal / 1000000).toFixed(0)}Mđ` : `${revVal.toLocaleString()}đ`}
+              <line
+                x1={left}
+                y1={y}
+                x2={left + graphWidth}
+                y2={y}
+                stroke="var(--color-border)"
+                strokeWidth={1}
+                strokeDasharray="4 4"
+              />
+              <text
+                x={left - 8}
+                y={y + 4}
+                textAnchor="end"
+                className="fill-muted-foreground text-[10px]"
+              >
+                {revVal >= 1000000
+                  ? `${(revVal / 1000000).toFixed(0)}Mđ`
+                  : `${revVal.toLocaleString()}đ`}
               </text>
             </g>
           );
         })}
 
         {/* X Axis label for days */}
-        {data.filter((_, idx) => idx % 5 === 0 || idx === data.length - 1).map((d, idx) => {
-          const originalIdx = data.indexOf(d);
-          const x = left + (originalIdx / (data.length - 1)) * graphWidth;
-          return (
-            <text key={idx} x={x} y={top + graphHeight + 18} textAnchor="middle" className="fill-muted-foreground text-[9px]">
-              {d.day}
-            </text>
-          );
-        })}
+        {data
+          .filter((_, idx) => idx % 5 === 0 || idx === data.length - 1)
+          .map((d, idx) => {
+            const originalIdx = data.indexOf(d);
+            const x = left + (originalIdx / (data.length - 1)) * graphWidth;
+            return (
+              <text
+                key={idx}
+                x={x}
+                y={top + graphHeight + 18}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[9px]"
+              >
+                {d.day}
+              </text>
+            );
+          })}
 
         {/* Bar chart for tickets sold */}
         {data.map((d, i) => {
@@ -99,32 +139,40 @@ function DailySalesChart({ data }: { data: any[] }) {
         })}
 
         {/* Area fill under Line chart */}
-        {areaPath && (
-          <path d={areaPath} fill="url(#chartRevGrad)" />
-        )}
+        {areaPath && <path d={areaPath} fill="url(#chartRevGrad)" />}
 
         {/* Line path for revenue */}
         {linePath && (
-          <path d={linePath} fill="none" stroke="#e5484d" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d={linePath}
+            fill="none"
+            stroke="#e5484d"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         )}
 
         {/* Points on Line chart */}
-        {data.filter((d) => d.revenue > 0).map((d, i) => {
-          const idx = data.indexOf(d);
-          const x = left + (idx / (data.length - 1)) * graphWidth;
-          const y = top + graphHeight - (d.revenue / maxRevenue) * graphHeight;
-          return (
-            <circle
-              key={i}
-              cx={x}
-              cy={y}
-              r={3.5}
-              className="fill-card stroke-[#e5484d] stroke-2 hover:r-5 cursor-pointer transition-all"
-            >
-              <title>{`Ngày ${d.day}: Doanh thu ${d.revenue.toLocaleString('vi-VN')}đ`}</title>
-            </circle>
-          );
-        })}
+        {data
+          .filter((d) => d.revenue > 0)
+          .map((d, i) => {
+            const idx = data.indexOf(d);
+            const x = left + (idx / (data.length - 1)) * graphWidth;
+            const y =
+              top + graphHeight - (d.revenue / maxRevenue) * graphHeight;
+            return (
+              <circle
+                key={i}
+                cx={x}
+                cy={y}
+                r={3.5}
+                className="fill-card stroke-[#e5484d] stroke-2 hover:r-5 cursor-pointer transition-all"
+              >
+                <title>{`Ngày ${d.day}: Doanh thu ${d.revenue.toLocaleString("vi-VN")}đ`}</title>
+              </circle>
+            );
+          })}
       </svg>
     </div>
   );
@@ -132,7 +180,11 @@ function DailySalesChart({ data }: { data: any[] }) {
 
 function VelocityChart({ data }: { data: any[] }) {
   if (!data || data.length === 0) {
-    return <div className="text-muted-foreground text-center py-16">Không có dữ liệu biểu đồ</div>;
+    return (
+      <div className="text-muted-foreground text-center py-16">
+        Không có dữ liệu biểu đồ
+      </div>
+    );
   }
 
   const width = 600;
@@ -146,13 +198,20 @@ function VelocityChart({ data }: { data: any[] }) {
 
   // Find max count across all data to scale Y
   let maxCount = 10;
-  data.forEach(tier => {
+  data.forEach((tier) => {
     tier.dailySales.forEach((s: any) => {
       if (s.count > maxCount) maxCount = s.count;
     });
   });
 
-  const colors = ["#e5484d", "#e0a82e", "#3d6f8f", "#123c3a", "#64748b", "#af52de"];
+  const colors = [
+    "#e5484d",
+    "#e0a82e",
+    "#3d6f8f",
+    "#123c3a",
+    "#64748b",
+    "#af52de",
+  ];
 
   const formatDate = (str: string) => {
     const parts = str.split("-");
@@ -169,8 +228,21 @@ function VelocityChart({ data }: { data: any[] }) {
           const val = Math.round(maxCount - (idx / 4) * maxCount);
           return (
             <g key={idx}>
-              <line x1={left} y1={y} x2={left + graphWidth} y2={y} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="4 4" />
-              <text x={left - 8} y={y + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">
+              <line
+                x1={left}
+                y1={y}
+                x2={left + graphWidth}
+                y2={y}
+                stroke="var(--color-border)"
+                strokeWidth={1}
+                strokeDasharray="4 4"
+              />
+              <text
+                x={left - 8}
+                y={y + 4}
+                textAnchor="end"
+                className="fill-muted-foreground text-[10px]"
+              >
                 {val} vé
               </text>
             </g>
@@ -178,19 +250,27 @@ function VelocityChart({ data }: { data: any[] }) {
         })}
 
         {/* X Axis label for dates */}
-        {data[0]?.dailySales.filter((_: any, idx: number) => idx % 3 === 0 || idx === 13).map((s: any, idx: number) => {
-          const originalIdx = data[0].dailySales.indexOf(s);
-          const x = left + (originalIdx / 13) * graphWidth;
-          return (
-            <text key={idx} x={x} y={top + graphHeight + 18} textAnchor="middle" className="fill-muted-foreground text-[9px]">
-              {formatDate(s.date)}
-            </text>
-          );
-        })}
+        {data[0]?.dailySales
+          .filter((_: any, idx: number) => idx % 3 === 0 || idx === 13)
+          .map((s: any, idx: number) => {
+            const originalIdx = data[0].dailySales.indexOf(s);
+            const x = left + (originalIdx / 13) * graphWidth;
+            return (
+              <text
+                key={idx}
+                x={x}
+                y={top + graphHeight + 18}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[9px]"
+              >
+                {formatDate(s.date)}
+              </text>
+            );
+          })}
 
         {/* Draw lines for each tier */}
         {data.map((tier, idx) => {
-          let linePath = '';
+          let linePath = "";
           const color = colors[idx % colors.length];
 
           tier.dailySales.forEach((s: any, i: number) => {
@@ -206,12 +286,20 @@ function VelocityChart({ data }: { data: any[] }) {
           return (
             <g key={idx}>
               {linePath && (
-                <path d={linePath} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d={linePath}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               )}
               {/* Draw points */}
               {tier.dailySales.map((s: any, i: number) => {
                 const x = left + (i / 13) * graphWidth;
-                const y = top + graphHeight - (s.count / maxCount) * graphHeight;
+                const y =
+                  top + graphHeight - (s.count / maxCount) * graphHeight;
                 return (
                   <circle
                     key={i}
@@ -234,9 +322,16 @@ function VelocityChart({ data }: { data: any[] }) {
           const color = colors[idx % colors.length];
           const y = top + idx * 20;
           return (
-            <g key={idx} transform={`translate(${left + graphWidth + 15}, ${y})`}>
+            <g
+              key={idx}
+              transform={`translate(${left + graphWidth + 15}, ${y})`}
+            >
               <rect width={12} height={12} rx={3} fill={color} />
-              <text x={18} y={10} className="fill-foreground text-[10px] font-bold">
+              <text
+                x={18}
+                y={10}
+                className="fill-foreground text-[10px] font-bold"
+              >
                 {tier.tierName}
               </text>
             </g>
@@ -248,12 +343,9 @@ function VelocityChart({ data }: { data: any[] }) {
 }
 
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
   const [stats, setStats] = useState<any>(null);
-  const [analytics, setAnalytics] = useState<any>(null);
   const [concertsList, setConcertsList] = useState<any[]>([]);
-  const [selectedConcertId, setSelectedConcertId] = useState<string | null>(null);
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -261,22 +353,19 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [summaryData, concertsData, analyticsData] = await Promise.all([
+      const [summaryData, concertsData] = await Promise.all([
         getRevenueSummary(),
         getConcerts(),
-        getDashboardAnalytics()
       ]);
-      
+
       setStats(summaryData);
       setConcertsList(concertsData.items || []);
-      setAnalytics(analyticsData);
-      
-      if (analyticsData?.eventAnalytics?.length > 0) {
-        setSelectedConcertId(analyticsData.eventAnalytics[0].id);
-      }
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || 'Không thể tải dữ liệu dashboard. Vui lòng kiểm tra lại kết nối.');
+      setError(
+        err?.message ||
+          "Không thể tải dữ liệu dashboard. Vui lòng kiểm tra lại kết nối.",
+      );
     } finally {
       setLoading(false);
     }
@@ -286,25 +375,25 @@ export default function AdminDashboardPage() {
     loadDashboardData();
   }, []);
 
-  const selectedConcertAnalytic = analytics?.eventAnalytics?.find(
-    (e: any) => e.id === selectedConcertId
-  );
-
   return (
     <AdminLayout>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="mb-2 text-4xl font-black tracking-tight text-foreground">Báo cáo & Phân tích</h1>
-            <p className="text-muted-foreground">Tổng quan bán vé, doanh thu và tốc độ bán vé từ dữ liệu thời gian thực.</p>
+            <h1 className="mb-2 text-4xl font-black tracking-tight text-foreground">
+              Báo cáo & Phân tích
+            </h1>
+            <p className="text-muted-foreground">
+              Tổng quan bán vé, doanh thu và thống kê từ dữ liệu thời gian thực.
+            </p>
           </div>
           <button
             onClick={loadDashboardData}
             disabled={loading}
             className="flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground shadow-sm transition hover:border-primary/40 hover:text-primary active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới dữ liệu
+            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+            Làm mới
           </button>
         </div>
 
@@ -320,52 +409,35 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Tab Selection */}
-        <div className="flex border-b border-border gap-6">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`pb-4 text-base font-black transition-all relative cursor-pointer ${
-              activeTab === "overview"
-                ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Tổng quan
-          </button>
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`pb-4 text-base font-black transition-all relative cursor-pointer ${
-              activeTab === "analytics"
-                ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Phân tích chi tiết (Analytics)
-          </button>
-        </div>
-
         {/* Loading Skeletons */}
         {loading && !stats && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }).map((_, idx) => (
-                <div key={idx} className="h-32 rounded-3xl border border-border bg-card p-6 animate-pulse" />
+                <div
+                  key={idx}
+                  className="h-32 rounded-3xl border border-border bg-card p-6 animate-pulse"
+                />
               ))}
             </div>
             <div className="h-64 rounded-3xl border border-border bg-card p-6 animate-pulse" />
           </div>
         )}
 
-        {/* TAB 1: OVERVIEW */}
-        {activeTab === "overview" && stats && (
+        {/* OVERVIEW CONTENT */}
+        {stats && (
           <>
             {/* Top Cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Tổng sự kiện</p>
-                    <p className="text-3xl font-black text-foreground">{stats.totalEvents ?? concertsList.length}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Tổng sự kiện
+                    </p>
+                    <p className="text-3xl font-black text-foreground">
+                      {stats.totalEvents ?? concertsList.length}
+                    </p>
                   </div>
                   <Calendar className="size-10 text-primary/25" />
                 </div>
@@ -374,9 +446,11 @@ export default function AdminDashboardPage() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Tổng người dùng</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Tổng người dùng
+                    </p>
                     <p className="text-3xl font-black text-foreground">
-                      {(stats.users || 0).toLocaleString('vi-VN')}
+                      {(stats.users || 0).toLocaleString("vi-VN")}
                     </p>
                   </div>
                   <Users className="size-10 text-primary/25" />
@@ -386,11 +460,13 @@ export default function AdminDashboardPage() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Doanh thu tháng trước</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Doanh thu tháng trước
+                    </p>
                     <p className="text-3xl font-black text-foreground">
                       {stats.lastMonthRevenue >= 1000000000
                         ? `${(stats.lastMonthRevenue / 1000000000).toFixed(2)}Bđ`
-                        : `${(stats.lastMonthRevenue || 0).toLocaleString('vi-VN')}đ`}
+                        : `${(stats.lastMonthRevenue || 0).toLocaleString("vi-VN")}đ`}
                     </p>
                   </div>
                   <BarChart3 className="size-10 text-emerald-500/25" />
@@ -400,9 +476,11 @@ export default function AdminDashboardPage() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Vé đã bán (Tổng)</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Vé đã bán (Tổng)
+                    </p>
                     <p className="text-3xl font-black text-foreground">
-                      {(stats.ticketsSold || 0).toLocaleString('vi-VN')}
+                      {(stats.ticketsSold || 0).toLocaleString("vi-VN")}
                     </p>
                   </div>
                   <TrendingUp className="size-10 text-accent/25" />
@@ -414,8 +492,13 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2 rounded-[2rem] border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
                 <div className="mb-4">
-                  <h3 className="text-lg font-black text-foreground">Doanh thu & Số lượng vé bán ra tháng trước</h3>
-                  <p className="text-xs text-muted-foreground">Cột xanh: Số vé bán ra (đơn vị: vé) · Đường đỏ: Doanh thu (đơn vị: đ)</p>
+                  <h3 className="text-lg font-black text-foreground">
+                    Doanh thu & Số lượng vé bán ra tháng trước
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Cột xanh: Số vé bán ra (đơn vị: vé) · Đường đỏ: Doanh thu
+                    (đơn vị: đ)
+                  </p>
                 </div>
                 <div className="mt-4">
                   <DailySalesChart data={stats.dailyRevenueLastMonth || []} />
@@ -423,43 +506,69 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
-                <h3 className="mb-4 text-lg font-black text-foreground">Phân bổ doanh số loại vé</h3>
+                <h3 className="mb-4 text-lg font-black text-foreground">
+                  Phân bổ doanh số loại vé
+                </h3>
                 <div className="space-y-4 flex-1 flex flex-col justify-center">
                   {stats.ticketDistribution?.map((item: any) => (
                     <div key={item.label}>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm font-semibold text-muted-foreground">{item.label}</span>
-                        <span className="text-sm font-black text-foreground">{item.value}%</span>
+                        <span className="text-sm font-semibold text-muted-foreground">
+                          {item.label}
+                        </span>
+                        <span className="text-sm font-black text-foreground">
+                          {item.value}%
+                        </span>
                       </div>
                       <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full ${item.color || 'bg-primary'}`} style={{ width: `${item.value}%` }} />
+                        <div
+                          className={`h-full ${item.color || "bg-primary"}`}
+                          style={{ width: `${item.value}%` }}
+                        />
                       </div>
                     </div>
-                  )) || <div className="text-muted-foreground text-center py-16">Không có dữ liệu phân bổ</div>}
+                  )) || (
+                    <div className="text-muted-foreground text-center py-16">
+                      Không có dữ liệu phân bổ
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Monthly Sales (Historic) */}
             <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
-              <h3 className="mb-4 text-lg font-black text-foreground">Tăng trưởng doanh thu 8 tháng qua</h3>
+              <h3 className="mb-4 text-lg font-black text-foreground">
+                Tăng trưởng doanh thu 8 tháng qua
+              </h3>
               <div className="h-44 flex items-end gap-3 px-4 pt-6">
                 {stats.monthlySales?.map((value: number, idx: number) => (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
+                  <div
+                    key={idx}
+                    className="flex-1 flex flex-col items-center gap-2 group"
+                  >
                     <div
                       className="w-full rounded-t-xl bg-primary/25 group-hover:bg-primary/50 transition-all duration-300"
                       style={{ height: `${value || 4}%` }}
                       title={`Doanh thu tương đối: ${value}%`}
                     />
-                    <span className="text-[10px] text-muted-foreground font-bold">Tháng {idx + 1}</span>
+                    <span className="text-[10px] text-muted-foreground font-bold">
+                      Tháng {idx + 1}
+                    </span>
                   </div>
-                )) || <div className="text-muted-foreground w-full text-center py-12">Không có dữ liệu biểu đồ</div>}
+                )) || (
+                  <div className="text-muted-foreground w-full text-center py-12">
+                    Không có dữ liệu biểu đồ
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Recent Events */}
             <div className="space-y-4">
-              <h2 className="text-2xl font-black text-foreground">Sự kiện gần đây</h2>
+              <h2 className="text-2xl font-black text-foreground">
+                Sự kiện gần đây
+              </h2>
               {concertsList.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center text-muted-foreground">
                   Chưa có sự kiện nào được ghi nhận.
@@ -467,106 +576,6 @@ export default function AdminDashboardPage() {
               ) : (
                 <ConcertTable concerts={concertsList.slice(0, 5)} />
               )}
-            </div>
-          </>
-        )}
-
-        {/* TAB 2: DETAILED ANALYTICS */}
-        {activeTab === "analytics" && analytics && (
-          <>
-            {/* New Users Last Month Card */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Người dùng mới (Tháng trước)</p>
-                    <p className="text-3xl font-black text-foreground">
-                      {(analytics.newUsersLastMonth || 0).toLocaleString('vi-VN')}
-                    </p>
-                  </div>
-                  <Users className="size-10 text-primary/25" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Sell-through rates list */}
-              <div className="lg:col-span-1 rounded-[2.5rem] border border-border bg-card p-6 shadow-sm h-fit">
-                <h3 className="text-lg font-black text-foreground mb-6 flex items-center gap-2">
-                  <Percent className="size-5 text-primary" />
-                  Tỷ lệ bán vé theo sự kiện
-                </h3>
-                <div className="space-y-5">
-                  {analytics.eventAnalytics?.map((event: any) => (
-                    <div
-                      key={event.id}
-                      onClick={() => setSelectedConcertId(event.id)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                        selectedConcertId === event.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/40 bg-card"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-bold text-foreground text-sm line-clamp-1">{event.title}</h4>
-                          <p className="text-[11px] text-muted-foreground line-clamp-1">{event.artist}</p>
-                        </div>
-                        <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${
-                          event.sellThroughRate >= 80
-                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                            : event.sellThroughRate >= 30
-                              ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                              : "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                        }`}>
-                          {event.sellThroughRate}%
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
-                        <span>{event.ticketsSold.toLocaleString()} / {event.capacity.toLocaleString()} vé</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            event.sellThroughRate >= 80
-                              ? "bg-emerald-500"
-                              : event.sellThroughRate >= 30
-                                ? "bg-amber-500"
-                                : "bg-rose-500"
-                          }`}
-                          style={{ width: `${event.sellThroughRate}%` }}
-                        />
-                      </div>
-                    </div>
-                  )) || <div className="text-muted-foreground text-center py-6">Không có dữ liệu phân tích</div>}
-                </div>
-              </div>
-
-              {/* Velocity Line Chart */}
-              <div className="lg:col-span-2 rounded-[2.5rem] border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-foreground mb-1 flex items-center gap-2">
-                    <Activity className="size-5 text-primary" />
-                    Biểu đồ tốc độ bán vé (14 ngày qua)
-                  </h3>
-                  {selectedConcertAnalytic ? (
-                    <p className="text-xs text-muted-foreground">
-                      Số vé bán ra mỗi ngày của tất cả hạng vé tại sự kiện: <strong className="text-foreground">{selectedConcertAnalytic.title}</strong>
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">Vui lòng chọn sự kiện bên danh sách để xem biểu đồ tốc độ bán vé.</p>
-                  )}
-                </div>
-
-                <div className="mt-6 flex-1 flex items-center justify-center">
-                  {selectedConcertAnalytic && selectedConcertAnalytic.tierVelocity?.length > 0 ? (
-                    <VelocityChart data={selectedConcertAnalytic.tierVelocity} />
-                  ) : (
-                    <div className="text-muted-foreground py-16">Không có dữ liệu tốc độ bán vé cho sự kiện này.</div>
-                  )}
-                </div>
-              </div>
             </div>
           </>
         )}
