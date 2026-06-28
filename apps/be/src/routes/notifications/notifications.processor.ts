@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Job } from "bullmq";
+import QRCode from "qrcode";
 import { MailService } from "../../common/mail/mail.service";
 import { OutboxService } from "../../common/outbox/outbox.service";
 import { PrismaService } from "../../common/prisma/prisma.service";
@@ -49,6 +50,10 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   private async handlePaymentCompleted(payload: PaymentCompletedPayload) {
+    this.logger.log(
+      `Starting payment.completed fan-out for orderId=${payload.orderId}`,
+    );
+
     const order = await this.prisma.order.findUnique({
       where: { id: payload.orderId },
       include: {
@@ -65,6 +70,9 @@ export class NotificationsProcessor extends WorkerHost {
     });
 
     if (!order || order.status !== OrderStatus.PAID) {
+      this.logger.warn(
+        `Skipping payment.completed for orderId=${payload.orderId} because order is missing or not PAID`,
+      );
       return { success: false, skipped: true, reason: "Order is not paid" };
     }
 
@@ -85,7 +93,7 @@ export class NotificationsProcessor extends WorkerHost {
       template: "payment_completed",
       dedupeKey: this.dedupeKey(
         order.userId,
-        order.concertId,
+        order.id,
         "payment_completed:in_app",
       ),
       payload: basePayload,
@@ -109,7 +117,7 @@ export class NotificationsProcessor extends WorkerHost {
       template: "payment_completed_eticket",
       dedupeKey: this.dedupeKey(
         order.userId,
-        order.concertId,
+        order.id,
         "payment_completed:email",
       ),
       payload: {
@@ -126,10 +134,25 @@ export class NotificationsProcessor extends WorkerHost {
       status: NotificationStatus.PENDING,
     });
 
+    this.logger.log(
+      `payment.completed created/resolved email notificationId=${email.id} status=${email.status} dedupeKey=${this.dedupeKey(
+        order.userId,
+        order.id,
+        "payment_completed:email",
+      )}`,
+    );
+
     if (email.status === NotificationStatus.PENDING) {
+      this.logger.log(
+        `Enqueueing send-single for notificationId=${email.id} orderId=${order.id}`,
+      );
       await this.outbox.put("notification", "send-single", {
         notificationId: email.id,
       });
+    } else {
+      this.logger.warn(
+        `Skipping send-single enqueue for notificationId=${email.id} because status=${email.status}`,
+      );
     }
 
     return {
@@ -209,6 +232,10 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   private async handleSendSingle(payload: SendSinglePayload) {
+    this.logger.log(
+      `Starting send-single for notificationId=${payload.notificationId}`,
+    );
+
     const notification = await this.prisma.notification.findUnique({
       where: { id: payload.notificationId },
       include: { user: { select: { email: true, fullName: true } } },
@@ -221,11 +248,17 @@ export class NotificationsProcessor extends WorkerHost {
         reason: "Notification not found",
       };
     if (notification.status === NotificationStatus.SENT) {
+      this.logger.warn(
+        `Skipping send-single for notificationId=${notification.id} because it is already SENT`,
+      );
       return { success: true, notificationId: notification.id, skipped: true };
     }
 
     try {
       if (notification.channel === NotificationChannel.EMAIL) {
+        this.logger.log(
+          `Sending EMAIL notificationId=${notification.id} template=${notification.template}`,
+        );
         await this.sendEmail(notification);
       }
 
@@ -237,8 +270,14 @@ export class NotificationsProcessor extends WorkerHost {
           errorMessage: null,
         },
       });
+      this.logger.log(
+        `Notification ${notification.id} marked as SENT after successful processing`,
+      );
       return { success: true, notificationId: notification.id };
     } catch (error) {
+      this.logger.error(
+        `Failed processing notificationId=${notification.id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       await this.prisma.notification.update({
         where: { id: notification.id },
         data: {
@@ -257,11 +296,15 @@ export class NotificationsProcessor extends WorkerHost {
     if (!to)
       throw new Error(`Notification ${notification.id} has no email recipient`);
 
+    this.logger.log(
+      `Preparing email notificationId=${notification.id} template=${notification.template} to=${to}`,
+    );
+
     if (notification.template === "payment_completed_eticket") {
       return this.mail.sendMail({
         to,
         subject: `TicketBox - E-ticket for ${payload.concertName}`,
-        html: this.renderPaymentEmail(payload),
+        html: await this.renderPaymentEmail(payload),
         text: `Your payment is successful. E-ticket: ${payload.eTicketUrl}`,
       });
     }
@@ -289,15 +332,35 @@ export class NotificationsProcessor extends WorkerHost {
     }
   }
 
-  private renderPaymentEmail(payload: Record<string, any>): string {
-    const tickets = (payload.tickets ?? [])
-      .map(
-        (ticket: any) =>
-          `<li><strong>${ticket.ticketCode}</strong> - ${ticket.ticketTypeName}${ticket.seatNumber ? ` - Seat ${ticket.seatNumber}` : ""}<br/><small>QR payload: ${ticket.qrPayload}</small></li>`,
-      )
-      .join("");
+  private async renderPaymentEmail(
+    payload: Record<string, any>,
+  ): Promise<string> {
+    const tickets = await Promise.all(
+      (payload.tickets ?? []).map(async (ticket: any) => {
+        const qrImage = ticket.qrPayload
+          ? await this.generateQrDataUrl(ticket.qrPayload)
+          : null;
 
-    return `<h2>Payment successful</h2><p>Hi ${payload.fullName ?? ""}, your tickets for <strong>${payload.concertName}</strong> are ready.</p><ul>${tickets}</ul><p><a href="${payload.eTicketUrl}">Open e-ticket</a></p>`;
+        return `<li style="margin-bottom:24px;"><strong>${ticket.ticketCode}</strong> - ${ticket.ticketTypeName}${ticket.seatNumber ? ` - Seat ${ticket.seatNumber}` : ""}${qrImage ? `<div style="margin-top:12px;"><img src="${qrImage}" alt="QR for ticket ${ticket.ticketCode}" width="180" height="180" style="display:block;border:1px solid #e5e7eb;border-radius:12px;padding:8px;background:#ffffff;" /></div>` : `<br/><small>QR payload: ${ticket.qrPayload}</small>`}</li>`;
+      }),
+    );
+
+    return `<h2>Payment successful</h2><p>Hi ${payload.fullName ?? ""}, your tickets for <strong>${payload.concertName}</strong> are ready.</p><ul style="padding-left:20px;">${tickets.join("")}</ul><p><a href="${payload.eTicketUrl}">Open e-ticket</a></p>`;
+  }
+
+  private async generateQrDataUrl(qrPayload: string): Promise<string | null> {
+    try {
+      return await QRCode.toDataURL(qrPayload, {
+        errorCorrectionLevel: "M",
+        margin: 1,
+        width: 180,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed generating QR image for email payload: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
   }
 
   private renderReminderEmail(payload: Record<string, any>): string {
@@ -310,9 +373,9 @@ export class NotificationsProcessor extends WorkerHost {
 
   private dedupeKey(
     userId: string,
-    concertId: string,
+    orderId: string,
     notificationType: string,
   ): string {
-    return `${userId}:${concertId}:${notificationType}`;
+    return `${userId}:${orderId}:${notificationType}`;
   }
 }
