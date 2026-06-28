@@ -1786,6 +1786,9 @@ export function addLocalNotification(title: string, message: string) {
     JSON.stringify([newItem, ...items]),
   );
 
+  // Dispatch custom event to sync other components
+  window.dispatchEvent(new CustomEvent("ticketbox-notification-change"));
+
   // Dispatch custom event to show Toast alert
   window.dispatchEvent(
     new CustomEvent("ticketbox-toast", {
