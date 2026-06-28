@@ -52,6 +52,8 @@ async function uploadPoster(s3Key: string, relativePath: string): Promise<string
     contentType = 'image/png';
   } else if (ext === '.webp') {
     contentType = 'image/webp';
+  } else if (ext === '.gif') {
+    contentType = 'image/gif';
   }
 
   try {
@@ -1085,10 +1087,10 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     { name: 'GA', price: '400000', totalQuantity: 50, maxPerUser: 4 },
   ];
 
-  // Generate a deterministic UUID v4-compliant ID from concertId + ticketTypeName.
+  // Generate a deterministic UUID v4-compliant ID from stable seed parts.
   // UUID v4 format: xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx
-  function generateDeterministicUuid(concertId: string, ticketTypeName: string): string {
-    const hash = crypto.createHash('sha256').update(`${concertId}-${ticketTypeName}`).digest('hex');
+  function generateDeterministicUuid(...seedParts: string[]): string {
+    const hash = crypto.createHash('sha256').update(seedParts.join('-')).digest('hex');
     const part1 = hash.substring(0, 8);
     const part2 = hash.substring(8, 12);
     // group3: must start with '4' (UUID v4)
@@ -1101,7 +1103,124 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     return `${part1}-${part2}-${part3}-${part4}-${part5}`;
   }
 
-  for (const cData of webpConcerts) {
+  function toTitleFromFixtureName(fileName: string): string {
+    const rawName = path.parse(fileName).name;
+    const normalized = rawName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/[_()[\]{}.,-]+/g, ' ')
+      .replace(/\b(1600|900|5760|1728|800|450|px|thumbnail|thumb|cover|banner|copy|queue|slider|home|email)\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!normalized) {
+      return 'TicketBox Live Event';
+    }
+
+    return normalized
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  function buildFixtureConcert(fileName: string, index: number): ConcertSeedData {
+    const venueProfiles = [
+      {
+        venueName: 'Nhà hát Hòa Bình',
+        venueAddress: '240 Đường 3 Tháng 2, Quận 10, TP. Hồ Chí Minh',
+        city: 'Thành phố Hồ Chí Minh',
+      },
+      {
+        venueName: 'Cung Văn hóa Hữu nghị Việt Xô',
+        venueAddress: '91 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội',
+        city: 'Thành phố Hà Nội',
+      },
+      {
+        venueName: 'Cung Thể thao Tiên Sơn',
+        venueAddress: 'Hải Châu, Đà Nẵng',
+        city: 'Thành phố Đà Nẵng',
+      },
+      {
+        venueName: 'Nhà thi đấu Nguyễn Du',
+        venueAddress: '116 Nguyễn Du, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+        city: 'Thành phố Hồ Chí Minh',
+      },
+      {
+        venueName: 'Trung tâm Hội nghị Quốc gia',
+        venueAddress: '57 Phạm Hùng, Nam Từ Liêm, Hà Nội',
+        city: 'Thành phố Hà Nội',
+      },
+      {
+        venueName: 'Đà Lạt Opera House',
+        venueAddress: 'Quảng trường Lâm Viên, Phường 10, TP. Đà Lạt',
+        city: 'Tỉnh Lâm Đồng',
+      },
+      {
+        venueName: 'SECC',
+        venueAddress: '799 Nguyễn Văn Linh, Tân Phú, Quận 7, TP. Hồ Chí Minh',
+        city: 'Thành phố Hồ Chí Minh',
+      },
+      {
+        venueName: 'The Opera Hải Phòng',
+        venueAddress: 'Lô 18A Lê Hồng Phong, Đằng Lâm, Hải An, Hải Phòng',
+        city: 'Thành phố Hải Phòng',
+      },
+    ];
+    const eventProfiles = [
+      { type: 'Live Music', artistName: 'Various Artists', hour: 19 },
+      { type: 'Music Festival', artistName: 'TicketBox Festival Artists', hour: 18 },
+      { type: 'Fan Meeting', artistName: 'Featured Artist', hour: 14 },
+      { type: 'Festival', artistName: 'Community Artists', hour: 8 },
+      { type: 'Gaming', artistName: 'Esports Guests', hour: 13 },
+      { type: 'Sport', artistName: 'Sport Community', hour: 6 },
+      { type: 'Event', artistName: 'Special Guests', hour: 17 },
+      { type: 'Theatre', artistName: 'Stage Ensemble', hour: 20 },
+    ];
+
+    const venue = venueProfiles[index % venueProfiles.length];
+    const event = eventProfiles[index % eventProfiles.length];
+    const title = toTitleFromFixtureName(fileName);
+    const paddedIndex = String(index + 1).padStart(3, '0');
+    const id = generateDeterministicUuid('fixture-concert', fileName);
+    const extension = path.extname(fileName).slice(1).toLowerCase() || 'jpg';
+    const posterSlug = slugify(`${paddedIndex}-${title}`) || `fixture-event-${paddedIndex}`;
+    const eventDate = new Date(Date.UTC(2026 + Math.floor(index / 36), (6 + index) % 12, (index % 24) + 1, event.hour, 0, 0));
+
+    return {
+      id,
+      name: `Fixture Live ${paddedIndex} - ${title}`,
+      description: `Sự kiện ${event.type.toLowerCase()} được seed từ ảnh fixture "${fileName}", có đầy đủ poster, địa điểm, lịch diễn, khu vực ghế và hạng vé để kiểm thử giao diện TicketBox.`,
+      artistName: event.artistName,
+      venueName: venue.venueName,
+      venueAddress: venue.venueAddress,
+      eventDate,
+      status: ConcertStatus.PUBLISHED,
+      type: event.type,
+      city: venue.city,
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: `../fixtures/${fileName}`,
+      s3Key: `posters/fixtures/${posterSlug}.${extension}`,
+      defaultPosterUrl: `https://example.com/posters/fixtures/${posterSlug}.${extension}`,
+      zones: [],
+      ticketTypes: [],
+    };
+  }
+
+  const alreadySeededPosterPaths = new Set([
+    ticketBoxLiveConcert.posterLocalPath,
+    ...webpConcerts.map((concert) => concert.posterLocalPath),
+  ]);
+  const fixturesDir = path.resolve(__dirname, '../fixtures');
+  const unseededFixtureConcerts = fs
+    .readdirSync(fixturesDir)
+    .filter((fileName) => /\.(webp|jpe?g|png|gif)$/i.test(fileName))
+    .filter((fileName) => !alreadySeededPosterPaths.has(`../fixtures/${fileName}`))
+    .sort((a, b) => a.localeCompare(b))
+    .map((fileName, index) => buildFixtureConcert(fileName, index));
+  const concertsToSeed = [...webpConcerts, ...unseededFixtureConcerts];
+
+  for (const cData of concertsToSeed) {
     cData.seatMapSvgLocalPath = '../fixtures/seatmap_template (2).svg';
     cData.zones = defaultZones;
     cData.ticketTypes = defaultTicketTypeTemplates.map(tpl => ({
@@ -1115,8 +1234,10 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
   }
 
   console.log('\n==================================================================');
-  console.log('REAL WEBP CONCERTS SEEDED SUCCESSFULLY.');
+  console.log('REAL FIXTURE CONCERTS SEEDED SUCCESSFULLY.');
   console.log(`Stable Concert ID: ${ticketBoxLiveConcert.id}`);
+  console.log(`Hard-coded fixture concerts: ${webpConcerts.length}`);
+  console.log(`Auto-generated unseeded fixture concerts: ${unseededFixtureConcerts.length}`);
   console.log('==================================================================\n');
 }
 

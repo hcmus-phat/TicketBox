@@ -3,10 +3,10 @@ import { Footer } from '@/components/footer';
 import { ConcertBrowser } from '@/components/concert-browser';
 import { HomeBanner } from '@/components/home-banner';
 import { Reveal } from '@/components/reveal';
+import { FeaturedCarousel } from '@/components/featured-carousel';
 import { getConcerts } from '@/lib/api';
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, CalendarDays, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 
 interface HomePageProps {
   searchParams?: Promise<{
@@ -24,7 +24,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <main className="min-h-screen bg-background">
       <Header />
 
-      <section className="mx-auto grid max-w-7xl gap-10 px-4 pb-16 pt-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:pb-20 lg:pt-14">
+      <section className="mx-auto grid max-w-7xl gap-10 px-4 pb-16 md:pb-64 lg:pb-72 pt-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:pt-14">
         <div>
           <Reveal className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-bold text-primary shadow-sm shadow-primary/10" variant="scale">
             <Sparkles className="size-4" />
@@ -59,45 +59,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </Reveal>
         </div>
 
-        {featured && (
-          <Reveal className="relative" delay={140} variant="scale">
-            <div className="hero-card-float relative overflow-hidden rounded-[2rem] border border-border bg-foreground shadow-2xl shadow-foreground/10">
-              <div className="relative aspect-[16/11]">
-                <Image
-                  src={featured.image}
-                  alt={featured.title}
-                  fill
-                  priority
-                  loading="eager"
-                  sizes="(min-width: 1024px) 56vw, 100vw"
-                  className="object-cover transition-transform duration-700 hover:scale-[1.035]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-                <div className="absolute bottom-5 left-5 right-5 text-white">
-                  <p className="text-sm font-bold text-white/70">{featured.artist}</p>
-                  <h2 className="mt-1 text-3xl font-black tracking-tight">{featured.title}</h2>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -bottom-8 left-5 right-5 rounded-3xl border border-border bg-card/95 p-5 shadow-xl shadow-foreground/10 backdrop-blur-xl transition duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/10 md:left-auto md:right-8 md:w-80">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Featured ticket</p>
-                  <p className="mt-1 text-lg font-black text-foreground">{featured.price.toLocaleString('vi-VN')}đ</p>
-                </div>
-                <span className="inline-flex items-center justify-center whitespace-nowrap rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">{featured.status}</span>
-              </div>
-              <div className="grid gap-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="size-4 text-primary" />
-                  {new Date(featured.date).toLocaleDateString('vi-VN')} · {featured.time}
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="size-4 text-primary" />
-                  {featured.venue}, {featured.city}
-                </div>
-              </div>
-            </div>
+        {concerts.length > 0 && (
+          <Reveal className="relative w-full animate-fade-in" delay={140} variant="scale">
+            <FeaturedCarousel concerts={concerts} />
           </Reveal>
         )}
       </section>
