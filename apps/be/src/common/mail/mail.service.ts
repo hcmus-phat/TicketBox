@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import nodemailer, { Transporter } from "nodemailer";
+import { Attachment } from "nodemailer/lib/mailer";
 
 @Injectable()
 export class MailService {
@@ -38,6 +39,7 @@ export class MailService {
     subject: string;
     html: string;
     text?: string;
+    attachments?: Attachment[];
   }) {
     this.logger.log(
       `Sending mail to=${options.to} subject=${options.subject} via ${this.mailHost}:${this.mailPort} from=${this.mailFrom}`,

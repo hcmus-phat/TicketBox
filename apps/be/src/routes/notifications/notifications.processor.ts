@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Job } from "bullmq";
-import QRCode from "qrcode";
+import { Attachment } from "nodemailer/lib/mailer";
 import { MailService } from "../../common/mail/mail.service";
 import { OutboxService } from "../../common/outbox/outbox.service";
 import { PrismaService } from "../../common/prisma/prisma.service";
@@ -17,6 +17,16 @@ import {
 type PaymentCompletedPayload = { orderId: string };
 type SendSinglePayload = { notificationId: string };
 type ReminderPayload = { concertId: string };
+type QrRenderOptions = {
+  type?: "png";
+  errorCorrectionLevel?: "L" | "M" | "Q" | "H";
+  margin?: number;
+  width?: number;
+};
+
+const QRCode = require("qrcode") as {
+  toBuffer(text: string, options?: QrRenderOptions): Promise<Buffer>;
+};
 
 @Injectable()
 @Processor("notification")
@@ -301,11 +311,14 @@ export class NotificationsProcessor extends WorkerHost {
     );
 
     if (notification.template === "payment_completed_eticket") {
+      const { html, attachments } = await this.renderPaymentEmail(payload);
+
       return this.mail.sendMail({
         to,
         subject: `TicketBox - E-ticket for ${payload.concertName}`,
-        html: await this.renderPaymentEmail(payload),
+        html,
         text: `Your payment is successful. E-ticket: ${payload.eTicketUrl}`,
+        attachments,
       });
     }
 
@@ -334,35 +347,118 @@ export class NotificationsProcessor extends WorkerHost {
 
   private async renderPaymentEmail(
     payload: Record<string, any>,
-  ): Promise<string> {
+  ): Promise<{
+    html: string;
+    attachments: Attachment[];
+  }> {
+    const attachments: Attachment[] = [];
+
     const tickets = await Promise.all(
-      (payload.tickets ?? []).map(async (ticket: any) => {
-        const qrImage = ticket.qrPayload
-          ? await this.generateQrDataUrl(ticket.qrPayload)
+      (payload.tickets ?? []).map(async (ticket: any, index: number) => {
+        const cid = `ticket-qr-${index}-${ticket.ticketCode}@ticketbox`;
+
+        const qrBuffer = ticket.qrPayload
+          ? await this.generateQrBuffer(ticket.qrPayload)
           : null;
 
-        return `<li style="margin-bottom:24px;"><strong>${ticket.ticketCode}</strong> - ${ticket.ticketTypeName}${ticket.seatNumber ? ` - Seat ${ticket.seatNumber}` : ""}${qrImage ? `<div style="margin-top:12px;"><img src="${qrImage}" alt="QR for ticket ${ticket.ticketCode}" width="180" height="180" style="display:block;border:1px solid #e5e7eb;border-radius:12px;padding:8px;background:#ffffff;" /></div>` : `<br/><small>QR payload: ${ticket.qrPayload}</small>`}</li>`;
+        if (qrBuffer) {
+          attachments.push({
+            filename: `${ticket.ticketCode}.png`,
+            content: qrBuffer,
+            cid,
+            contentType: "image/png",
+          });
+        }
+
+        return `
+          <li style="margin-bottom:24px;">
+            <strong>${ticket.ticketCode}</strong>
+            -
+            ${ticket.ticketTypeName}
+            ${
+              ticket.seatNumber
+                ? ` - Seat ${ticket.seatNumber}`
+                : ""
+            }
+
+            ${
+              qrBuffer
+                ? `
+                  <div style="margin-top:12px;">
+                    <img
+                      src="cid:${cid}"
+                      alt="QR for ticket ${ticket.ticketCode}"
+                      width="180"
+                      height="180"
+                      style="
+                        display:block;
+                        border:1px solid #e5e7eb;
+                        background:#ffffff;
+                      "
+                    />
+                  </div>
+                `
+                : `
+                  <br/>
+                  <small>
+                    QR payload: ${ticket.qrPayload}
+                  </small>
+                `
+            }
+          </li>
+        `;
       }),
     );
 
-    return `<h2>Payment successful</h2><p>Hi ${payload.fullName ?? ""}, your tickets for <strong>${payload.concertName}</strong> are ready.</p><ul style="padding-left:20px;">${tickets.join("")}</ul><p><a href="${payload.eTicketUrl}">Open e-ticket</a></p>`;
+    const html = `
+      <h2>Payment successful</h2>
+
+      <p>
+        Hi ${payload.fullName ?? ""},
+        your tickets for
+        <strong>${payload.concertName}</strong>
+        are ready.
+      </p>
+
+      <ul style="padding-left:20px;">
+        ${tickets.join("")}
+      </ul>
+
+      <p>
+        <a href="${payload.eTicketUrl}">
+          Open e-ticket
+        </a>
+      </p>
+    `;
+
+    return {
+      html,
+      attachments,
+    };
   }
 
-  private async generateQrDataUrl(qrPayload: string): Promise<string | null> {
+  private async generateQrBuffer(
+    qrPayload: string,
+  ): Promise<Buffer | null> {
     try {
-      return await QRCode.toDataURL(qrPayload, {
+      return await QRCode.toBuffer(qrPayload, {
+        type: "png",
         errorCorrectionLevel: "M",
         margin: 1,
         width: 180,
       });
     } catch (error) {
       this.logger.warn(
-        `Failed generating QR image for email payload: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed generating QR image for email payload: ${
+          error instanceof Error
+            ? error.message
+            : String(error)
+        }`,
       );
+
       return null;
     }
   }
-
   private renderReminderEmail(payload: Record<string, any>): string {
     return `<h2>Your concert starts soon</h2><p>Hi ${payload.fullName ?? ""}, <strong>${payload.concertName}</strong> starts within 24 hours.</p><p>Time: ${payload.eventDate}</p><p>Venue: ${payload.venueName}</p>`;
   }
