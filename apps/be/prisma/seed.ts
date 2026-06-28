@@ -407,6 +407,7 @@ interface ConcertSeedData {
   defaultPosterUrl: string;
   zones: ZoneSeedData[];
   ticketTypes: TicketTypeSeedData[];
+  createdAt?: Date;
 }
 
 async function uploadSeatMapSvg(concertId: string, relativePath: string): Promise<string> {
@@ -500,6 +501,7 @@ async function seedConcert(data: ConcertSeedData): Promise<void> {
         city: data.city || null,
         posterUrl,
         seatMapSvgUrl,
+        createdAt: data.createdAt || undefined,
       },
     });
   } else {
@@ -518,6 +520,7 @@ async function seedConcert(data: ConcertSeedData): Promise<void> {
         city: data.city || null,
         seatMapSvgUrl,
         posterUrl,
+        createdAt: data.createdAt || undefined,
       },
     });
     console.log(`Created seeded concert: "${data.name}"`);
@@ -1076,6 +1079,7 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     },
     {
       id: '11aa23bb-cc44-55ee-66ff-77aa88bb9901',
+      createdAt: new Date('2025-07-01T00:00:00.000Z'),
       name: 'Show Của Đen - Giữa Một Vạn Tour 2025',
       description: 'Live Concert đặc biệt kỷ niệm chặng đường âm nhạc của Đen Vâu tại Việt Nam.',
       artistName: 'Đen Vâu',
@@ -1094,6 +1098,7 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     },
     {
       id: '22bb33cc-dd55-66ee-77ff-88bb99ccaa02',
+      createdAt: new Date('2025-04-01T00:00:00.000Z'),
       name: 'Inner Me Live Concert 2025',
       description: 'Đại nhạc hội hoành tráng Inner Me của nữ ca sĩ nhạc sĩ Vũ Cát Tường.',
       artistName: 'Vũ Cát Tường',
@@ -1112,6 +1117,7 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     },
     {
       id: '33cc44dd-ee66-77ee-88ff-99ccaaee1103',
+      createdAt: new Date('2025-01-01T00:00:00.000Z'),
       name: 'Rhyder Album Tour 2025',
       description: 'Đêm diễn ra mắt album phòng thu đầu tiên của quán quân Rhyder kết hợp giao lưu fan hâm mộ.',
       artistName: 'Rhyder',
