@@ -1,5 +1,9 @@
 "use client";
 
+// tasteskill: Anti-Slop Frontend Skill - 3D Perspective Hover Card
+// DESIGN_VARIANCE: 8 | MOTION_INTENSITY: 8 | VISUAL_DENSITY: 4
+// Reading this as: Event ticket booking homepage for design-conscious consumers, with a premium cinematic/dark-tech vibe, leaning toward 3D parallax hover cards + smooth physics transitions.
+
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -29,6 +33,7 @@ export function FeaturedCarousel({ concerts }: FeaturedCarouselProps) {
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // We feature the top 5 concerts
   const featuredConcerts = concerts.slice(0, 5);
@@ -73,6 +78,49 @@ export function FeaturedCarousel({ concerts }: FeaturedCarouselProps) {
     touchEndX.current = null;
   };
 
+  // 3D Parallax Tilt Hover Handlers
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    // Respect user's prefers-reduced-motion setting
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const rect = card.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    // Mouse coordinates relative to card center (-0.5 to 0.5)
+    const mouseX = (e.clientX - rect.left) / width - 0.5;
+    const mouseY = (e.clientY - rect.top) / height - 0.5;
+
+    // Max rotation angles (degrees)
+    const maxRotateX = 12;
+    const maxRotateY = 12;
+
+    const rX = -mouseY * maxRotateX;
+    const rY = mouseX * maxRotateY;
+
+    card.style.setProperty('--rx', `${rX}deg`);
+    card.style.setProperty('--ry', `${rY}deg`);
+
+    // Shine coordinates (0% to 100%)
+    const shineX = ((e.clientX - rect.left) / width) * 100;
+    const shineY = ((e.clientY - rect.top) / height) * 100;
+    card.style.setProperty('--mx', `${shineX}%`);
+    card.style.setProperty('--my', `${shineY}%`);
+  };
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    card.style.setProperty('--rx', '0deg');
+    card.style.setProperty('--ry', '0deg');
+    card.style.setProperty('--mx', '50%');
+    card.style.setProperty('--my', '50%');
+  };
+
   if (featuredConcerts.length === 0) return null;
 
   const activeConcert = featuredConcerts[activeIndex];
@@ -81,38 +129,65 @@ export function FeaturedCarousel({ concerts }: FeaturedCarouselProps) {
     <div
       className="relative group w-full"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        handleMouseLeave();
+      }}
     >
-      {/* Slider Image Container */}
+      {/* Slider Image Container with 3D Tilt Effect */}
       <div 
-        className="hero-card-float relative overflow-hidden rounded-[2rem] border border-border bg-foreground shadow-2xl shadow-foreground/10 aspect-[16/11]"
+        ref={cardRef}
+        className="hero-card-float relative overflow-hidden rounded-[2rem] border border-border bg-foreground shadow-2xl shadow-foreground/10 aspect-[16/11] transition-transform duration-200 ease-out"
+        style={{
+          transform: 'perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))',
+          transformStyle: 'preserve-3d'
+        }}
+        onMouseMove={handleMouseMove}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <div 
           className="flex h-full w-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-          style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+          style={{ 
+            transform: `translateX(-${activeIndex * 100}%)`,
+            transformStyle: 'preserve-3d'
+          }}
         >
           {featuredConcerts.map((concert) => (
             <Link 
               key={concert.id}
               href={`/concert/${concert.slug}`}
               className="relative w-full h-full shrink-0 block focus:outline-none"
+              style={{ transformStyle: 'preserve-3d' }}
             >
-              <Image
-                src={concert.image}
-                alt={concert.title}
-                fill
-                priority
-                loading="eager"
-                sizes="(min-width: 1024px) 56vw, 100vw"
-                className="object-cover transition-transform duration-700 hover:scale-[1.02]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+              {/* Background Image - translateZ(0px) */}
+              <div 
+                className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.025]"
+                style={{ transform: 'translateZ(0px)' }}
+              >
+                <Image
+                  src={concert.image}
+                  alt={concert.title}
+                  fill
+                  priority
+                  loading="eager"
+                  sizes="(min-width: 1024px) 56vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
               
-              {/* Concert Title & Artist Text: constrained on desktop so it doesn't overlap the popup on the right */}
-              <div className="absolute bottom-5 left-5 right-5 md:left-8 md:bottom-8 md:right-auto md:max-w-[calc(100%-360px)] text-white">
+              {/* Ambient Dark Gradient - translateZ(10px) */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" 
+                style={{ transform: 'translateZ(10px)' }}
+              />
+              
+              {/* Concert Title & Artist Text: Floating in 3D parallax space - translateZ(40px) */}
+              <div 
+                className="absolute bottom-5 left-5 right-5 md:left-8 md:bottom-8 md:right-auto md:max-w-[calc(100%-360px)] text-white"
+                style={{ transform: 'translateZ(40px)' }}
+              >
                 <p className="text-sm font-bold text-white/70">{concert.artist}</p>
                 <h2 className="mt-1 text-2xl md:text-3xl font-black tracking-tight line-clamp-2 leading-tight">
                   {concert.title}
@@ -122,9 +197,21 @@ export function FeaturedCarousel({ concerts }: FeaturedCarouselProps) {
           ))}
         </div>
 
-        {/* Navigation Dots */}
+        {/* 3D Shine Reflection Effect Overlay - translateZ(20px) */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-25 transition-opacity duration-300 z-10 mix-blend-color-dodge rounded-[2rem]"
+          style={{
+            background: 'radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.45) 0%, transparent 65%)',
+            transform: 'translateZ(20px)'
+          }}
+        />
+
+        {/* Navigation Dots - translateZ(30px) */}
         {featuredConcerts.length > 1 && (
-          <div className="absolute top-5 right-5 z-10 flex gap-1.5 bg-black/35 px-3 py-1.5 rounded-full backdrop-blur border border-white/10">
+          <div 
+            className="absolute top-5 right-5 z-10 flex gap-1.5 bg-black/35 px-3 py-1.5 rounded-full backdrop-blur border border-white/10"
+            style={{ transform: 'translateZ(30px)' }}
+          >
             {featuredConcerts.map((_, i) => (
               <button
                 key={i}
@@ -139,7 +226,7 @@ export function FeaturedCarousel({ concerts }: FeaturedCarouselProps) {
           </div>
         )}
 
-        {/* Navigation Buttons (only on screens with hover or always on mobile) */}
+        {/* Navigation Buttons - translateZ(30px) */}
         {featuredConcerts.length > 1 && (
           <>
             <button
@@ -150,6 +237,7 @@ export function FeaturedCarousel({ concerts }: FeaturedCarouselProps) {
                 handlePrev();
               }}
               className="absolute left-4 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur border border-white/10 flex items-center justify-center transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+              style={{ transform: 'translateZ(30px)' }}
               aria-label="Previous slide"
             >
               <ChevronLeft className="size-5" />
@@ -162,6 +250,7 @@ export function FeaturedCarousel({ concerts }: FeaturedCarouselProps) {
                 handleNext();
               }}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur border border-white/10 flex items-center justify-center transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+              style={{ transform: 'translateZ(30px)' }}
               aria-label="Next slide"
             >
               <ChevronRight className="size-5" />

@@ -94,6 +94,10 @@ export class NotificationsProcessor extends WorkerHost {
       venueName: order.concert.venueName,
       ticketCodes: order.tickets.map((ticket) => ticket.ticketCode),
       eTicketUrl: this.buildETicketUrl(order.id),
+      totalAmount: order.totalAmount.toString(),
+      paymentMethod: order.paymentMethod ? String(order.paymentMethod) : "N/A",
+      paymentRef: order.paymentRef || "N/A",
+      paidAt: order.paidAt ? order.paidAt.toISOString() : new Date().toISOString(),
     };
 
     const inApp = await this.createNotification({
@@ -201,20 +205,37 @@ export class NotificationsProcessor extends WorkerHost {
         fullName: order.user.fullName,
       };
 
-      await this.createNotification({
-        userId: order.userId,
-        concertId: concert.id,
-        channel: NotificationChannel.PUSH,
-        template: "concert_reminder_24h",
-        dedupeKey: this.dedupeKey(
-          order.userId,
-          concert.id,
-          "concert_reminder_24h:in_app",
-        ),
-        payload: reminderPayload,
-        status: NotificationStatus.SENT,
-        sentAt: new Date(),
+      const inAppDedupeKey = this.dedupeKey(
+        order.userId,
+        concert.id,
+        "concert_reminder_24h:in_app",
+      );
+
+      const existingInApp = await this.prisma.notification.findUnique({
+        where: { dedupeKey: inAppDedupeKey },
       });
+
+      if (!existingInApp) {
+        await this.createNotification({
+          userId: order.userId,
+          concertId: concert.id,
+          channel: NotificationChannel.PUSH,
+          template: "concert_reminder_24h",
+          dedupeKey: inAppDedupeKey,
+          payload: reminderPayload,
+          status: NotificationStatus.SENT,
+          sentAt: new Date(),
+        });
+
+        await this.prisma.inAppNotification.create({
+          data: {
+            userId: order.userId,
+            title: "Sự kiện sắp diễn ra",
+            message: `Chỉ còn chưa đầy 24 giờ nữa là concert "${concert.name}" sẽ bắt đầu. Đừng bỏ lỡ nhé!`,
+            read: false,
+          },
+        });
+      }
 
       const email = await this.createNotification({
         userId: order.userId,
@@ -371,64 +392,154 @@ export class NotificationsProcessor extends WorkerHost {
         }
 
         return `
-          <li style="margin-bottom:24px;">
-            <strong>${ticket.ticketCode}</strong>
-            -
-            ${ticket.ticketTypeName}
-            ${
-              ticket.seatNumber
-                ? ` - Seat ${ticket.seatNumber}`
-                : ""
-            }
-
-            ${
-              qrBuffer
-                ? `
-                  <div style="margin-top:12px;">
-                    <img
-                      src="cid:${cid}"
-                      alt="QR for ticket ${ticket.ticketCode}"
-                      width="180"
-                      height="180"
-                      style="
-                        display:block;
-                        border:1px solid #e5e7eb;
-                        background:#ffffff;
-                      "
-                    />
-                  </div>
-                `
-                : `
-                  <br/>
-                  <small>
-                    QR payload: ${ticket.qrPayload}
-                  </small>
-                `
-            }
-          </li>
+          <div style="background-color: #fafbfc; border: 1px solid #d0d7de; border-radius: 12px; padding: 20px; margin-bottom: 16px; border-left: 5px solid #e5484d;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+              <tr>
+                <td style="vertical-align: top; padding-right: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                  <span style="display: inline-block; background-color: #eaf0ee; color: #123c3a; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 9999px; letter-spacing: 0.05em; margin-bottom: 12px;">
+                    ${ticket.ticketTypeName}
+                  </span>
+                  <h3 style="font-size: 18px; font-weight: 800; color: #1f2328; margin: 0 0 6px 0; font-family: monospace; letter-spacing: 0.02em;">
+                    ${ticket.ticketCode}
+                  </h3>
+                  ${
+                    ticket.seatNumber
+                      ? `<p style="font-size: 13px; color: #57606a; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Ghế: <strong style="color: #24292f;">${ticket.seatNumber}</strong></p>`
+                      : `<p style="font-size: 13px; color: #57606a; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Vé phổ thông tự do</p>`
+                  }
+                </td>
+                <td align="right" style="vertical-align: middle; width: 140px;">
+                  ${
+                    qrBuffer
+                      ? `
+                        <div style="border: 1px solid #e1e4e6; padding: 6px; border-radius: 8px; background-color: #ffffff; display: inline-block; width: 120px; text-align: center;">
+                          <img
+                            src="cid:${cid}"
+                            alt="QR for ticket ${ticket.ticketCode}"
+                            width="120"
+                            height="120"
+                            style="display:block; width: 120px; height: 120px; border: none;"
+                          />
+                        </div>
+                      `
+                      : `
+                        <div style="border: 2px dashed #d0d7de; padding: 12px 6px; border-radius: 8px; text-align: center; color: #8c959f; font-size: 10px; font-weight: 700; line-height: 1.2; width: 120px; font-family: monospace;">
+                          Mã vé:<br/>
+                          <small style="font-size: 8px; word-break: break-all;">${ticket.qrPayload}</small>
+                        </div>
+                      `
+                  }
+                </td>
+              </tr>
+            </table>
+          </div>
         `;
       }),
     );
 
+    let eventDateFormatted = payload.eventDate;
+    try {
+      const d = new Date(payload.eventDate);
+      eventDateFormatted = `${d.toLocaleDateString("vi-VN")} lúc ${d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    } catch (e) {}
+
+    let paidDateFormatted = payload.paidAt || "";
+    try {
+      const d = new Date(payload.paidAt);
+      paidDateFormatted = `${d.toLocaleDateString("vi-VN")} ${d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    } catch (e) {}
+
+    let formattedAmount = "0";
+    try {
+      if (payload.totalAmount) {
+        const amt = parseFloat(payload.totalAmount);
+        formattedAmount = amt.toLocaleString("vi-VN");
+      }
+    } catch (e) {}
+
     const html = `
-      <h2>Payment successful</h2>
+      <div style="background-color: #f6f8fa; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100%; color: #24292f; margin: 0;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #d0d7de; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border-collapse: collapse;">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #e5484d; padding: 24px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 0.05em;">TICKETBOX</h1>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 32px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <h2 style="font-size: 22px; font-weight: 800; color: #1f2328; margin: 0 0 12px 0; line-height: 1.3;">Thanh toán thành công! 🎉</h2>
+              <p style="font-size: 15px; line-height: 1.6; color: #57606a; margin: 0 0 24px 0;">
+                Chào <strong>${payload.fullName || "bạn"}</strong>,<br>
+                Đơn đặt vé của bạn cho sự kiện <strong>${payload.concertName}</strong> đã được thanh toán thành công. Dưới đây là biên lai thanh toán và vé điện tử của bạn:
+              </p>
 
-      <p>
-        Hi ${payload.fullName ?? ""},
-        your tickets for
-        <strong>${payload.concertName}</strong>
-        are ready.
-      </p>
+              <!-- Payment Details Card -->
+              <div style="background-color: #fafbfc; border: 1px solid #d0d7de; border-radius: 12px; padding: 20px; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <h3 style="font-size: 14px; font-weight: 800; color: #1f2328; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e1e4e6; padding-bottom: 8px;">Thông tin thanh toán</h3>
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="font-size: 14px; color: #24292f; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; color: #57606a; font-weight: 500;">Mã đơn hàng:</td>
+                    <td align="right" style="padding: 6px 0; font-weight: 700; font-family: monospace; color: #24292f;">${payload.orderId ? payload.orderId.substring(0, 8).toUpperCase() : "N/A"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; color: #57606a; font-weight: 500;">Mã giao dịch:</td>
+                    <td align="right" style="padding: 6px 0; font-weight: 700; font-family: monospace; color: #24292f;">${payload.paymentRef || "N/A"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; color: #57606a; font-weight: 500;">Phương thức:</td>
+                    <td align="right" style="padding: 6px 0; font-weight: 700; color: #24292f; text-transform: uppercase;">${payload.paymentMethod || "N/A"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; color: #57606a; font-weight: 500;">Thời gian:</td>
+                    <td align="right" style="padding: 6px 0; font-weight: 700; color: #24292f;">${paidDateFormatted}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0 0 0; color: #1f2328; font-weight: 800; border-top: 1px dashed #d0d7de; font-size: 16px;">Tổng cộng:</td>
+                    <td align="right" style="padding: 12px 0 0 0; font-weight: 900; color: #e5484d; border-top: 1px dashed #d0d7de; font-size: 18px;">${formattedAmount} VND</td>
+                  </tr>
+                </table>
+              </div>
 
-      <ul style="padding-left:20px;">
-        ${tickets.join("")}
-      </ul>
+              <!-- Ticket details / cards -->
+              <h3 style="font-size: 14px; font-weight: 800; color: #1f2328; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Thông tin vé vào cổng</h3>
+              <div style="margin-bottom: 24px;">
+                ${tickets.join("")}
+              </div>
 
-      <p>
-        <a href="${payload.eTicketUrl}">
-          Open e-ticket
-        </a>
-      </p>
+              <!-- Event Details -->
+              <div style="background-color: #f6f8fa; border-radius: 12px; padding: 20px; margin-bottom: 28px; border: 1px dashed #d0d7de; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <h3 style="font-size: 14px; font-weight: 800; color: #e5484d; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Chi tiết sự kiện</h3>
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="font-size: 14px; color: #24292f; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; width: 100px; color: #57606a; vertical-align: top;">Thời gian:</td>
+                    <td style="padding: 6px 0; font-weight: 700;">${eventDateFormatted}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #57606a; vertical-align: top;">Địa điểm:</td>
+                    <td style="padding: 6px 0; font-weight: 700;">${payload.venueName}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 32px 0 16px 0;">
+                <a href="${payload.eTicketUrl}" style="background-color: #e5484d; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 9999px; display: inline-block; font-size: 15px; box-shadow: 0 4px 12px rgba(229, 72, 77, 0.25); text-align: center;">
+                  Mở Vé Điện Tử (E-Ticket)
+                </a>
+              </div>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f6f8fa; padding: 24px; text-align: center; font-size: 12px; color: #57606a; border-top: 1px solid #d0d7de; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <p style="margin: 0 0 8px 0; font-weight: 600;">© 2026 TicketBox. All rights reserved.</p>
+              <p style="margin: 0; line-height: 1.4;">Email này được gửi tự động từ hệ thống TicketBox. Vui lòng không trả lời trực tiếp.</p>
+            </td>
+          </tr>
+        </table>
+      </div>
     `;
 
     return {
@@ -459,8 +570,68 @@ export class NotificationsProcessor extends WorkerHost {
       return null;
     }
   }
+
   private renderReminderEmail(payload: Record<string, any>): string {
-    return `<h2>Your concert starts soon</h2><p>Hi ${payload.fullName ?? ""}, <strong>${payload.concertName}</strong> starts within 24 hours.</p><p>Time: ${payload.eventDate}</p><p>Venue: ${payload.venueName}</p>`;
+    let eventDateFormatted = payload.eventDate;
+    try {
+      const d = new Date(payload.eventDate);
+      eventDateFormatted = `${d.toLocaleDateString("vi-VN")} lúc ${d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    } catch (e) {}
+
+    const appBaseUrl = this.config.get<string>("mail.appBaseUrl", "http://localhost:3000");
+    const myTicketsUrl = `${appBaseUrl}/my-tickets`;
+
+    return `
+      <div style="background-color: #f6f8fa; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100%; color: #24292f; margin: 0;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #d0d7de; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border-collapse: collapse;">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #e5484d; padding: 24px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 0.05em;">TICKETBOX</h1>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 32px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <h2 style="font-size: 22px; font-weight: 800; color: #1f2328; margin: 0 0 12px 0; line-height: 1.3;">Sắp đến giờ diễn ra sự kiện! 🎤</h2>
+              <p style="font-size: 15px; line-height: 1.6; color: #57606a; margin: 0 0 24px 0;">
+                Chào <strong>${payload.fullName || "bạn"}</strong>,<br>
+                Chỉ còn chưa đầy 24 giờ nữa là sự kiện <strong>${payload.concertName}</strong> sẽ chính thức bắt đầu. Hãy chuẩn bị sẵn sàng để tận hưởng đêm nhạc tuyệt vời này!
+              </p>
+
+              <!-- Event Details Card -->
+              <div style="background-color: #fafbfc; border: 1px solid #d0d7de; border-radius: 12px; padding: 20px; margin-bottom: 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <h3 style="font-size: 14px; font-weight: 800; color: #e5484d; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Thông tin chi tiết</h3>
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="font-size: 14px; color: #24292f; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; width: 100px; color: #57606a; vertical-align: top;">Thời gian:</td>
+                    <td style="padding: 6px 0; font-weight: 700;">${eventDateFormatted}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #57606a; vertical-align: top;">Địa điểm:</td>
+                    <td style="padding: 6px 0; font-weight: 700;">${payload.venueName}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 32px 0 16px 0;">
+                <a href="${myTicketsUrl}" style="background-color: #e5484d; color: #ffffff; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 9999px; display: inline-block; font-size: 15px; box-shadow: 0 4px 12px rgba(229, 72, 77, 0.25); text-align: center;">
+                  Kiểm tra vé của tôi
+                </a>
+              </div>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f6f8fa; padding: 24px; text-align: center; font-size: 12px; color: #57606a; border-top: 1px solid #d0d7de; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <p style="margin: 0 0 8px 0; font-weight: 600;">© 2026 TicketBox. All rights reserved.</p>
+              <p style="margin: 0; line-height: 1.4;">Email này được gửi tự động từ hệ thống TicketBox. Vui lòng không trả lời trực tiếp.</p>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
   }
 
   private buildETicketUrl(orderId: string): string {
