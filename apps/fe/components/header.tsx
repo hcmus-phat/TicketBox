@@ -216,8 +216,19 @@ export function Header() {
     }
 
     loadNotifications();
-    const interval = setInterval(loadNotifications, 5000);
-    return () => clearInterval(interval);
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("ticketbox-notification-change", loadNotifications);
+    }
+
+    const interval = setInterval(loadNotifications, 30000); // 30 seconds polling
+
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("ticketbox-notification-change", loadNotifications);
+      }
+    };
   }, [session]);
 
   async function handleMarkRead(id: string) {

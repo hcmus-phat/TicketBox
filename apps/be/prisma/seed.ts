@@ -52,6 +52,8 @@ async function uploadPoster(s3Key: string, relativePath: string): Promise<string
     contentType = 'image/png';
   } else if (ext === '.webp') {
     contentType = 'image/webp';
+  } else if (ext === '.gif') {
+    contentType = 'image/gif';
   }
 
   try {
@@ -851,6 +853,222 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
       zones: [],
       ticketTypes: [],
     },
+    {
+      id: 'a0f72df0-c3d5-4299-b005-87cdda37afb1',
+      name: 'T1 In Vietnam - The Promise Fulfilled',
+      description: 'Đại nhạc hội và ngày hội giao lưu người hâm mộ T1 tại Việt Nam.',
+      artistName: 'T1',
+      venueName: 'Trung tâm Triển lãm Việt Nam VEC',
+      venueAddress: 'Trung tâm Triển lãm Việt Nam VEC, TP. Hồ Chí Minh',
+      eventDate: new Date('2025-12-20T09:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Gaming',
+      city: 'Thành phố Hồ Chí Minh',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/0712_1600x900.webp',
+      s3Key: 'posters/t1_promise_fulfilled.webp',
+      defaultPosterUrl: 'https://example.com/posters/t1.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: '56221c5f-3312-4fb3-beef-e67c8cb312d8',
+      name: 'Saigon Sake Fest 2025',
+      description: 'Lễ hội văn hóa ẩm thực và thưởng thức rượu Sake truyền thống Nhật Bản tại Sài Gòn.',
+      artistName: 'Various Artists',
+      venueName: 'Terrace, 2nd Floor, New World Hotel',
+      venueAddress: '76 Lê Lai, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+      eventDate: new Date('2025-12-13T18:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Festival',
+      city: 'Thành phố Hồ Chí Minh',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/1111_1600X900.webp',
+      s3Key: 'posters/saigon_sake_fest.webp',
+      defaultPosterUrl: 'https://example.com/posters/sake.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: 'd60897f2-1b12-4cfb-8e15-8a9d8cb19f07',
+      name: 'VPIM 2026 Hanoi Vibes',
+      description: 'Giải chạy marathon quốc tế VPBank Hanoi International Marathon 2026 nâng cao tinh thần thể thao.',
+      artistName: 'VPIM',
+      venueName: 'Hồ Hoàn Kiếm',
+      venueAddress: 'Hoàn Kiếm, Hà Nội',
+      eventDate: new Date('2026-10-18T06:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Sport',
+      city: 'Thành phố Hà Nội',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/2506_VIPM_1600x900.webp',
+      s3Key: 'posters/vpim_hanoi_vibes.webp',
+      defaultPosterUrl: 'https://example.com/posters/vpim.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: 'a78f2cb2-e3cb-4d92-bb8a-df9c23bf9a82',
+      name: 'Hương Sắc Giai Nhân',
+      description: 'Đại nhạc hội thu hình trực tiếp tụ hội các danh ca hàng đầu Việt Nam.',
+      artistName: 'Hương Lan, Họa Mi, Như Quỳnh',
+      venueName: 'Nhà hát Hòa Bình',
+      venueAddress: '240 Đường 3 Tháng 2, Quận 10, TP. Hồ Chí Minh',
+      eventDate: new Date('2025-12-27T19:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Live Music',
+      city: 'Thành phố Hồ Chí Minh',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/2710_1600x900.webp',
+      s3Key: 'posters/huong_sac_giai_nhan.webp',
+      defaultPosterUrl: 'https://example.com/posters/huong_sac.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: 'f2c8d2a6-b6fb-4c12-8e4d-2a8f9c7b9a52',
+      name: 'AirAsia The Next Live Concert 2026 Đà Nẵng',
+      description: 'Đại nhạc hội AirAsia The Next hoành tráng dành cho giới trẻ tại Đà Nẵng.',
+      artistName: 'The Next',
+      venueName: 'Cung Thể thao Tiên Sơn',
+      venueAddress: 'Hải Châu, Đà Nẵng',
+      eventDate: new Date('2026-05-10T19:30:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Live Music',
+      city: 'Thành phố Đà Nẵng',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/2803_Thumbnail.webp',
+      s3Key: 'posters/airasia_the_next_danang.webp',
+      defaultPosterUrl: 'https://example.com/posters/airasia_next.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: '3b8fa7c2-9e8a-4b92-ae7d-e6b7c2d9a5b3',
+      name: 'Sơn.K - The First Fan Meeting 2026: Hello Capo',
+      description: 'Buổi gặp gỡ fan hâm mộ đầu tiên của ca sĩ Sơn.K trong chuỗi sự kiện Hello Capo.',
+      artistName: 'Sơn.K',
+      venueName: 'Capital Theatre',
+      venueAddress: '212 Lý Chính Thắng, Quận 3, TP. Hồ Chí Minh',
+      eventDate: new Date('2026-01-04T19:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Fan Meeting',
+      city: 'Thành phố Hồ Chí Minh',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/hello capo 1600x900.webp',
+      s3Key: 'posters/sonk_hello_capo.webp',
+      defaultPosterUrl: 'https://example.com/posters/sonk.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: 'a1c8f56b-61fb-4cf7-bee7-6ed6f2bb9257',
+      name: 'The Wandering Rose - Trung Quân & Vicky Nhung',
+      description: 'Đêm nhạc thính phòng acoustic lãng mạn giữa mây ngàn Ba Vi của The Wandering Rose.',
+      artistName: 'Trung Quân, Vicky Nhung, Chu Thúy Quỳnh',
+      venueName: 'The Wandering Rose Villa Ba Vi',
+      venueAddress: 'Yên Bài, Ba Vì, Hà Nội',
+      eventDate: new Date('2025-11-08T17:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Live Music',
+      city: 'Thành phố Hà Nội',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/1600x900 (1).webp',
+      s3Key: 'posters/wandering_rose_bavi_1.webp',
+      defaultPosterUrl: 'https://example.com/posters/rose_bavi_1.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: 'ab917d37-1e31-4144-8f4d-d5fc3868ae6f',
+      name: 'The Brothers Live Show',
+      description: 'Sân khấu kết hợp bùng nổ của nhóm nghệ sĩ The Brothers gồm Hà Lê, Đỗ Hoàng Hiệp, Tăng Phúc và Liên Bỉnh Phát.',
+      artistName: 'Hà Lê, Đỗ Hoàng Hiệp, Tăng Phúc, Liên Bỉnh Phát',
+      venueName: 'The Opera',
+      venueAddress: 'Lô 18A Lê Hồng Phong, Đằng Lâm, Hải An, Hải Phòng',
+      eventDate: new Date('2026-01-17T19:30:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Live Music',
+      city: 'Thành phố Hải Phòng',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/1600x900 (2).webp',
+      s3Key: 'posters/the_brothers.webp',
+      defaultPosterUrl: 'https://example.com/posters/brothers.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: 'd7f72df0-c3d5-4299-b005-87cdda37afb3',
+      name: 'Đấu Trường SAM - Kiệt tác ánh sáng và Gió',
+      description: 'Sự kiện thi đấu kết hợp nghệ thuật ánh sáng và âm thanh hoành tráng.',
+      artistName: 'SAM Arena',
+      venueName: 'Trung tâm Triển lãm Việt Nam VEC',
+      venueAddress: 'Trung tâm Triển lãm Việt Nam VEC, TP. Hồ Chí Minh',
+      eventDate: new Date('2026-03-08T18:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Event',
+      city: 'Thành phố Hồ Chí Minh',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/1600x900 (4).webp',
+      s3Key: 'posters/dau_truong_sam.webp',
+      defaultPosterUrl: 'https://example.com/posters/sam.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: '9bd15adf-5483-4be6-a653-8d9f07c2712e',
+      name: 'Ravolution Music Festival - Ravo 10 Years',
+      description: 'Đại nhạc hội EDM Ravolution kỷ niệm chặng đường 10 năm phát triển và thăng hoa âm nhạc điện tử.',
+      artistName: 'Ravolution DJs',
+      venueName: 'SECC',
+      venueAddress: '799 Nguyễn Văn Linh, Tân Phú, Quận 7, TP. Hồ Chí Minh',
+      eventDate: new Date('2026-06-13T19:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Music Festival',
+      city: 'Thành phố Hồ Chí Minh',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/1600x900 (5).webp',
+      s3Key: 'posters/ravolution_10_years.webp',
+      defaultPosterUrl: 'https://example.com/posters/ravo.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: '2520d45b-f52e-40c1-9ba7-fcfae6524cd9',
+      name: 'Hoà Minzy Fan Concert - Bắc Bling',
+      description: 'Buổi biểu diễn ấm cúng kết hợp gặp gỡ người hâm mộ chính thức của ca sĩ Hòa Minzy.',
+      artistName: 'Hòa Minzy',
+      venueName: 'Cung Văn hóa Hữu nghị Việt Xô',
+      venueAddress: '91 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội',
+      eventDate: new Date('2026-06-20T19:30:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Fan Concert',
+      city: 'Thành phố Hà Nội',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/1600x900 (7).webp',
+      s3Key: 'posters/hoa_minzy_bac_bling.webp',
+      defaultPosterUrl: 'https://example.com/posters/hoa_minzy.webp',
+      zones: [],
+      ticketTypes: [],
+    },
+    {
+      id: 'a1c8f56b-61fb-4cf7-bee7-6ed6f2bb9258',
+      name: 'The Wandering Rose - Hoàng Dũng & Song Luân',
+      description: 'Đêm nhạc thính phòng acoustic lãng mạn mùa Giáng Sinh giữa mây ngàn Ba Vì của The Wandering Rose.',
+      artistName: 'Anh Quân Idol, Hoàng Dũng, Song Luân',
+      venueName: 'The Wandering Rose Villa Ba Vi',
+      venueAddress: 'Yên Bài, Ba Vì, Hà Nội',
+      eventDate: new Date('2025-12-27T17:00:00.000Z'),
+      status: ConcertStatus.PUBLISHED,
+      type: 'Live Music',
+      city: 'Thành phố Hà Nội',
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: '../fixtures/1600x900_2712.webp',
+      s3Key: 'posters/wandering_rose_bavi_2.webp',
+      defaultPosterUrl: 'https://example.com/posters/rose_bavi_2.webp',
+      zones: [],
+      ticketTypes: [],
+    },
   ];
 
   const defaultZones: ZoneSeedData[] = [
@@ -869,10 +1087,10 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     { name: 'GA', price: '400000', totalQuantity: 50, maxPerUser: 4 },
   ];
 
-  // Generate a deterministic UUID v4-compliant ID from concertId + ticketTypeName.
+  // Generate a deterministic UUID v4-compliant ID from stable seed parts.
   // UUID v4 format: xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx
-  function generateDeterministicUuid(concertId: string, ticketTypeName: string): string {
-    const hash = crypto.createHash('sha256').update(`${concertId}-${ticketTypeName}`).digest('hex');
+  function generateDeterministicUuid(...seedParts: string[]): string {
+    const hash = crypto.createHash('sha256').update(seedParts.join('-')).digest('hex');
     const part1 = hash.substring(0, 8);
     const part2 = hash.substring(8, 12);
     // group3: must start with '4' (UUID v4)
@@ -885,7 +1103,124 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
     return `${part1}-${part2}-${part3}-${part4}-${part5}`;
   }
 
-  for (const cData of webpConcerts) {
+  function toTitleFromFixtureName(fileName: string): string {
+    const rawName = path.parse(fileName).name;
+    const normalized = rawName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/[_()[\]{}.,-]+/g, ' ')
+      .replace(/\b(1600|900|5760|1728|800|450|px|thumbnail|thumb|cover|banner|copy|queue|slider|home|email)\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!normalized) {
+      return 'TicketBox Live Event';
+    }
+
+    return normalized
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  function buildFixtureConcert(fileName: string, index: number): ConcertSeedData {
+    const venueProfiles = [
+      {
+        venueName: 'Nhà hát Hòa Bình',
+        venueAddress: '240 Đường 3 Tháng 2, Quận 10, TP. Hồ Chí Minh',
+        city: 'Thành phố Hồ Chí Minh',
+      },
+      {
+        venueName: 'Cung Văn hóa Hữu nghị Việt Xô',
+        venueAddress: '91 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội',
+        city: 'Thành phố Hà Nội',
+      },
+      {
+        venueName: 'Cung Thể thao Tiên Sơn',
+        venueAddress: 'Hải Châu, Đà Nẵng',
+        city: 'Thành phố Đà Nẵng',
+      },
+      {
+        venueName: 'Nhà thi đấu Nguyễn Du',
+        venueAddress: '116 Nguyễn Du, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+        city: 'Thành phố Hồ Chí Minh',
+      },
+      {
+        venueName: 'Trung tâm Hội nghị Quốc gia',
+        venueAddress: '57 Phạm Hùng, Nam Từ Liêm, Hà Nội',
+        city: 'Thành phố Hà Nội',
+      },
+      {
+        venueName: 'Đà Lạt Opera House',
+        venueAddress: 'Quảng trường Lâm Viên, Phường 10, TP. Đà Lạt',
+        city: 'Tỉnh Lâm Đồng',
+      },
+      {
+        venueName: 'SECC',
+        venueAddress: '799 Nguyễn Văn Linh, Tân Phú, Quận 7, TP. Hồ Chí Minh',
+        city: 'Thành phố Hồ Chí Minh',
+      },
+      {
+        venueName: 'The Opera Hải Phòng',
+        venueAddress: 'Lô 18A Lê Hồng Phong, Đằng Lâm, Hải An, Hải Phòng',
+        city: 'Thành phố Hải Phòng',
+      },
+    ];
+    const eventProfiles = [
+      { type: 'Live Music', artistName: 'Various Artists', hour: 19 },
+      { type: 'Music Festival', artistName: 'TicketBox Festival Artists', hour: 18 },
+      { type: 'Fan Meeting', artistName: 'Featured Artist', hour: 14 },
+      { type: 'Festival', artistName: 'Community Artists', hour: 8 },
+      { type: 'Gaming', artistName: 'Esports Guests', hour: 13 },
+      { type: 'Sport', artistName: 'Sport Community', hour: 6 },
+      { type: 'Event', artistName: 'Special Guests', hour: 17 },
+      { type: 'Theatre', artistName: 'Stage Ensemble', hour: 20 },
+    ];
+
+    const venue = venueProfiles[index % venueProfiles.length];
+    const event = eventProfiles[index % eventProfiles.length];
+    const title = toTitleFromFixtureName(fileName);
+    const paddedIndex = String(index + 1).padStart(3, '0');
+    const id = generateDeterministicUuid('fixture-concert', fileName);
+    const extension = path.extname(fileName).slice(1).toLowerCase() || 'jpg';
+    const posterSlug = slugify(`${paddedIndex}-${title}`) || `fixture-event-${paddedIndex}`;
+    const eventDate = new Date(Date.UTC(2026 + Math.floor(index / 36), (6 + index) % 12, (index % 24) + 1, event.hour, 0, 0));
+
+    return {
+      id,
+      name: `Fixture Live ${paddedIndex} - ${title}`,
+      description: `Sự kiện ${event.type.toLowerCase()} được seed từ ảnh fixture "${fileName}", có đầy đủ poster, địa điểm, lịch diễn, khu vực ghế và hạng vé để kiểm thử giao diện TicketBox.`,
+      artistName: event.artistName,
+      venueName: venue.venueName,
+      venueAddress: venue.venueAddress,
+      eventDate,
+      status: ConcertStatus.PUBLISHED,
+      type: event.type,
+      city: venue.city,
+      seatMapSvgUrl: '<svg viewBox="0 0 100 100"><rect width="100" height="100" /></svg>',
+      posterLocalPath: `../fixtures/${fileName}`,
+      s3Key: `posters/fixtures/${posterSlug}.${extension}`,
+      defaultPosterUrl: `https://example.com/posters/fixtures/${posterSlug}.${extension}`,
+      zones: [],
+      ticketTypes: [],
+    };
+  }
+
+  const alreadySeededPosterPaths = new Set([
+    ticketBoxLiveConcert.posterLocalPath,
+    ...webpConcerts.map((concert) => concert.posterLocalPath),
+  ]);
+  const fixturesDir = path.resolve(__dirname, '../fixtures');
+  const unseededFixtureConcerts = fs
+    .readdirSync(fixturesDir)
+    .filter((fileName) => /\.(webp|jpe?g|png|gif)$/i.test(fileName))
+    .filter((fileName) => !alreadySeededPosterPaths.has(`../fixtures/${fileName}`))
+    .sort((a, b) => a.localeCompare(b))
+    .map((fileName, index) => buildFixtureConcert(fileName, index));
+  const concertsToSeed = [...webpConcerts, ...unseededFixtureConcerts];
+
+  for (const cData of concertsToSeed) {
     cData.seatMapSvgLocalPath = '../fixtures/seatmap_template (2).svg';
     cData.zones = defaultZones;
     cData.ticketTypes = defaultTicketTypeTemplates.map(tpl => ({
@@ -899,8 +1234,10 @@ async function seedConcertsAndTicketTypes(): Promise<void> {
   }
 
   console.log('\n==================================================================');
-  console.log('REAL WEBP CONCERTS SEEDED SUCCESSFULLY.');
+  console.log('REAL FIXTURE CONCERTS SEEDED SUCCESSFULLY.');
   console.log(`Stable Concert ID: ${ticketBoxLiveConcert.id}`);
+  console.log(`Hard-coded fixture concerts: ${webpConcerts.length}`);
+  console.log(`Auto-generated unseeded fixture concerts: ${unseededFixtureConcerts.length}`);
   console.log('==================================================================\n');
 }
 
