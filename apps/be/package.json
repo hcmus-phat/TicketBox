@@ -11,6 +11,7 @@
     "start:api": "node dist/main.js",
     "start:worker": "node dist/worker.js",
     "loadtest:orders": "k6 run load-tests/orders-race-idempotency.k6.js",
+    "loadtest:orders:rules": "k6 run load-tests/orders-business-rules.k6.js",
     "migrate:gen": "prisma generate",
     "migrate:studio": "prisma studio",
     "migrate:dev": "prisma migrate dev --name init",
