@@ -1,5 +1,24 @@
+const localApiBaseUrl = "http://127.0.0.1:3001";
+const configuredApiBaseUrl = (
+  process.env.API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  ""
+).replace(/\/$/, "");
+
 export const API_BASE_URL =
-  typeof window !== "undefined" ? "/api" : "http://127.0.0.1:3001";
+  typeof window !== "undefined"
+    ? "/api"
+    : configuredApiBaseUrl || localApiBaseUrl;
+
+if (
+  typeof window === "undefined" &&
+  process.env.NODE_ENV === "production" &&
+  !configuredApiBaseUrl
+) {
+  console.warn(
+    "API_BASE_URL is not configured. Server-side requests will fall back to local API URL.",
+  );
+}
 
 export class ApiError extends Error {
   statusCode?: number;
